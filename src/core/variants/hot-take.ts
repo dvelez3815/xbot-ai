@@ -19,12 +19,17 @@ Create ONE short, punchy post in ${language}. Rules:
 - Mention specific tools by name (from the trends above)
 - Keep it short and sharp — this is a quick scroll-stopping take
 - End with a provocative question or "convince me I'm wrong" challenge
+- You CAN use line breaks for emphasis if it reads better
 - 1-2 hashtags max
 - MUST be under ${maxLength} characters (HARD limit)
 - Examples of good hot takes:
-  "Everyone pays for Midjourney when Ideogram does it free. Change my mind."
-  "Unpopular opinion: ChatGPT free > Claude Pro for 90% of tasks."
-  "Zapier is overrated. Most automations you need are 3 lines of Python."
+  "Everyone pays for Midjourney when Ideogram does it free.
+
+  Change my mind."
+
+  "Unpopular opinion: ChatGPT free > Claude Pro for 90% of tasks.
+
+  Zapier is overrated. Most automations you need are 3 lines of Python."
 
 Reply with ONLY the post text, nothing else.`;
   },

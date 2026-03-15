@@ -58,7 +58,7 @@ export class ContentEngine {
         },
         {
           role: "user",
-          content: `This post is ${finalText.length} characters but must be under ${maxLength}. Shorten it without losing specific tool names or the core message. Keep hashtags.\n\nPost: "${finalText}"`,
+          content: `This post is ${finalText.length} characters but must be under ${maxLength}. Shorten it without losing specific tool names or the core message. Keep hashtags and line breaks.\n\nPost: "${finalText}"`,
         },
       ], `shorten:${variant.id}`);
 
