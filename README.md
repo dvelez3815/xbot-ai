@@ -195,10 +195,7 @@ cp deploy/helm/secret-values.yaml.example deploy/helm/secret-values.yaml
 vim deploy/helm/secret-values.yaml
 
 # Install
-helm install xbot deploy/helm/ -n xbot-ai --create-namespace -f deploy/helm/secret-values.yaml
-
-# Upgrade
-helm upgrade xbot deploy/helm/ -n xbot-ai -f deploy/helm/secret-values.yaml
+helm upgrade --install xbot deploy/helm/ -n xbot-ai --create-namespace -f deploy/helm/secret-values.yaml
 ```
 
 ## Configuration reference
