@@ -54,9 +54,14 @@ export class Engine {
         return { success: false, error: "no_trends_found", postedAt: new Date() };
       }
 
-      // Step 2: Generate a post
+      // Step 2: Generate a post (retry once on failure)
       debug("cycle:step", "2/5 Generating post with AI...");
-      const post = await this.contentEngine.generatePost(trending);
+      let post = await this.contentEngine.generatePost(trending);
+      if (!post) {
+        log("Generation failed, retrying once...");
+        debug("cycle:step", "2/5 Retrying generation...");
+        post = await this.contentEngine.generatePost(trending);
+      }
       if (!post) {
         return { success: false, error: "generation_failed", postedAt: new Date() };
       }

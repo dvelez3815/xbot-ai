@@ -51,11 +51,13 @@ async function chatCompletion(config: AIConfig, messages: ChatMessage[], tag: st
     });
     debug(`${tag}:prompt`, messages.map((m) => `[${m.role}] ${m.content}`).join("\n\n"));
 
+    const timeoutMs = config.timeoutSeconds * 1000;
     const start = Date.now();
     const response = await fetch(`${config.baseUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(timeoutMs),
     });
 
     if (!response.ok) {

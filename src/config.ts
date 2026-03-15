@@ -37,6 +37,7 @@ export function loadConfig(): AppConfig {
       baseUrl: optionalEnv("AI_BASE_URL", provider === "ollama" ? "http://localhost:11434" : "https://api.anthropic.com"),
       apiKey: optionalEnv("AI_API_KEY", ""),
       model: optionalEnv("AI_MODEL", provider === "ollama" ? "qwen3.5:9b" : "claude-sonnet-4-20250514"),
+      timeoutSeconds: parseInt(optionalEnv("AI_TIMEOUT_SECONDS", "300"), 10),
     },
     bot: {
       niche: optionalEnv("BOT_NICHE", "technology"),

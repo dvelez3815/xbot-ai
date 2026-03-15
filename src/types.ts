@@ -32,6 +32,8 @@ export interface AIConfig {
   baseUrl: string;
   apiKey: string;
   model: string;
+  /** Timeout in seconds for AI requests */
+  timeoutSeconds: number;
 }
 
 export interface AppConfig {
