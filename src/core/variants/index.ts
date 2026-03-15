@@ -1,15 +1,16 @@
 import type { PostVariant } from "./variant.js";
-import { hotTakeVariant } from "./hot-take.js";
+import { PostVariants } from "../../constants.js";
+import { quickInsightVariant } from "./quick-insight.js";
 import { deepInsightVariant } from "./deep-insight.js";
 
 export type { PostVariant } from "./variant.js";
 
 const VARIANT_REGISTRY: Record<string, PostVariant> = {
-  [hotTakeVariant.id]: hotTakeVariant,
-  [deepInsightVariant.id]: deepInsightVariant,
+  [PostVariants.QUICK_INSIGHT]: quickInsightVariant,
+  [PostVariants.DEEP_INSIGHT]: deepInsightVariant,
 };
 
-export const DEFAULT_VARIANTS = [hotTakeVariant.id, deepInsightVariant.id];
+export const DEFAULT_VARIANTS = [PostVariants.QUICK_INSIGHT, PostVariants.DEEP_INSIGHT];
 
 export function getVariant(id: string): PostVariant {
   const variant = VARIANT_REGISTRY[id];

@@ -1,10 +1,11 @@
 import type { PostVariant } from "./variant.js";
+import { PostVariants } from "../../constants.js";
 
 export const deepInsightVariant: PostVariant = {
-  id: "deep-insight",
+  id: PostVariants.DEEP_INSIGHT,
   name: "Deep Insight",
   minLength: 300,
-  maxLength: 600,
+  maxLength: 800,
 
   systemPrompt(niche: string, language: string): string {
     return `You are a thoughtful analyst and practitioner of "${niche}". You write in ${language}. You share data-driven insights, real experiences, and nuanced takes that go beyond surface-level. You mention specific tools, stats, and techniques. You write posts that people bookmark and share. You format your posts with line breaks for readability.`;

@@ -1,3 +1,12 @@
+// ── Post Variants ──
+
+export const PostVariants = {
+  QUICK_INSIGHT: "quick-insight",
+  DEEP_INSIGHT: "deep-insight",
+} as const;
+
+export type PostVariantType = (typeof PostVariants)[keyof typeof PostVariants];
+
 // ── AI Providers ──
 
 export const AIProviders = {

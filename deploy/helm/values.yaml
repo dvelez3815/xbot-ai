@@ -17,7 +17,7 @@ config:
   botMaxResultsPerSearch: "10"
   botExpandAuthors: "false"
   botPostMaxLength: "600"
-  botPostVariants: "hot-take,deep-insight"
+  botPostVariants: "quick-insight,deep-insight"
   botDelayBetweenPostsSeconds: "180"
   botPostsPerDay: "8"
   botMinIntervalMinutes: "45"

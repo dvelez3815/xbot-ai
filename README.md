@@ -64,17 +64,17 @@ Each cycle generates multiple posts with different styles to help you discover w
 
 | Variant | Style | Length | Best for |
 |---|---|---|---|
-| `hot-take` | Short, provocative, debate-starting | 100-280 chars | Quick engagement, replies |
+| `quick-insight` | Concrete tip, data point, or tool comparison | 100-280 chars | Quick value, saves, shares |
 | `deep-insight` | Data-driven, analytical, informative | 300-600 chars | Bookmarks, shares, authority |
 
 ```bash
-BOT_POST_VARIANTS=hot-take,deep-insight   # Both variants per cycle
-BOT_POST_VARIANTS=hot-take                # Only short takes
-BOT_POST_VARIANTS=deep-insight            # Only long-form
+BOT_POST_VARIANTS=quick-insight,deep-insight   # Both variants per cycle
+BOT_POST_VARIANTS=quick-insight                # Only short insights
+BOT_POST_VARIANTS=deep-insight                 # Only long-form analysis
 ```
 
-Example **hot-take** output:
-> "Everyone pays for Midjourney when Ideogram does it free. Change my mind. #AI"
+Example **quick-insight** output:
+> "n8n's HTTP Request node + Claude API = custom AI agents without writing a single line of code. Most people overcomplicate this with LangChain. #AI"
 
 Example **deep-insight** output:
 > "80% of companies report zero productivity gains from AI. But the 20% that do have one thing in common: they didn't just adopt tools, they redesigned workflows around them. I switched from using ChatGPT as a chatbot to using it as a pipeline (research > draft > Claude for review > Zapier to publish). Productivity jumped 3x in a week. The tool isn't the bottleneck — your process is. #AI #Productivity"
@@ -244,7 +244,7 @@ The tool shows top tweets, like counts, and query strategy (AND vs OR) for each 
 | `BOT_MAX_RESULTS_PER_SEARCH` | `10` | Tweets to fetch per language |
 | `BOT_EXPAND_AUTHORS` | `false` | Fetch author usernames ($0.01/user) |
 | `BOT_POST_MAX_LENGTH` | `280` | Max post length (280 free, up to 25000 premium) |
-| `BOT_POST_VARIANTS` | `hot-take,deep-insight` | Active post variants for A/B testing |
+| `BOT_POST_VARIANTS` | `quick-insight,deep-insight` | Active post variants for A/B testing |
 | `BOT_DELAY_BETWEEN_POSTS_SECONDS` | `180` | Delay between posts in same cycle |
 | `BOT_POSTS_PER_DAY` | `8` | Daily post limit (across all variants) |
 | `BOT_MIN_INTERVAL_MINUTES` | `45` | Minimum minutes between cycles |
