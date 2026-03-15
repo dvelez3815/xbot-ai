@@ -175,17 +175,73 @@ Reply with ONLY the tweet text, nothing else.`,
       return null;
     }
 
-    const sourceWithMedia = inspiration.find((t) => t.mediaUrls.length > 0);
-    const bestSource = sourceWithMedia ?? inspiration[0];
+    // Ask AI to pick the most relevant image for the generated post
+    const tweetsWithMedia = inspiration.filter((t) => t.mediaUrls.length > 0);
+    let chosenImageUrl: string | undefined;
+
+    if (tweetsWithMedia.length > 0) {
+      log("Selecting best image for post...");
+      chosenImageUrl = await this.pickRelevantImage(text, tweetsWithMedia);
+    }
+
+    const bestSource = tweetsWithMedia.find((t) => t.mediaUrls[0] === chosenImageUrl) ?? inspiration[0];
 
     log(`Generated post (${text.length} chars): "${text.slice(0, 80)}..."`);
-    debug("generate:final", { text, hasImage: Boolean(sourceWithMedia), imageUrl: sourceWithMedia?.mediaUrls[0] });
+    debug("generate:final", { text, hasImage: Boolean(chosenImageUrl), imageUrl: chosenImageUrl });
 
     return {
       text,
-      imageUrl: sourceWithMedia?.mediaUrls[0],
+      imageUrl: chosenImageUrl,
       sourceTweet: bestSource,
     };
+  }
+
+  /**
+   * Ask AI to pick the most relevant image from source tweets, or none.
+   */
+  private async pickRelevantImage(postText: string, tweetsWithMedia: TrendTweet[]): Promise<string | undefined> {
+    const options = tweetsWithMedia.map((t, i) =>
+      `${i + 1}. Tweet: "${t.text.slice(0, 120)}..." | Image URL: ${t.mediaUrls[0]}`
+    ).join("\n");
+
+    const raw = await chatCompletion(this.aiConfig, [
+      {
+        role: "system",
+        content: "You select the most relevant image for a social media post. Reply only with valid JSON.",
+      },
+      {
+        role: "user",
+        content: `Here is a tweet that will be posted:
+"${postText}"
+
+Here are available images from source tweets:
+${options}
+
+Pick the image that best matches the post's topic and tone.
+If NONE of the images are relevant to the post, reply: {"pick": 0}
+Otherwise reply with the number: {"pick": 1} or {"pick": 2} etc.
+
+Reply with JSON only.`,
+      },
+    ], "pick-image");
+
+    try {
+      const result = JSON.parse(raw) as { pick: number };
+      debug("pick-image:result", result);
+
+      if (result.pick === 0 || result.pick > tweetsWithMedia.length) {
+        log("AI decided: no relevant image for this post");
+        return undefined;
+      }
+
+      const chosen = tweetsWithMedia[result.pick - 1];
+      log(`AI picked image ${result.pick}: ${chosen.mediaUrls[0]}`);
+      return chosen.mediaUrls[0];
+    } catch {
+      debug("pick-image:parse-error", { raw });
+      log("Could not parse image selection, skipping image");
+      return undefined;
+    }
   }
 
   /**
