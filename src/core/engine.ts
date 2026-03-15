@@ -120,6 +120,8 @@ export class Engine {
     let repliesSent = 0;
 
     for (const tweet of trending) {
+      // Only reply to tweets in the bot's language to avoid cross-language replies
+      if (tweet.lang !== this.config.bot.language) continue;
       if (Math.random() > chance) continue;
 
       try {

@@ -54,8 +54,8 @@ The bot only searches and generates content about your configured niche. Set `BO
 Search trends in English, Portuguese, French, or any language X supports. The bot finds viral content in other languages and generates original posts in your language.
 
 ```bash
-BOT_LANGUAGE=es                  # Posts in Spanish
-BOT_SEARCH_LANGUAGES=en,pt,fr   # Search trends in English, Portuguese, French
+BOT_LANGUAGE=en                  # Posts in English
+BOT_SEARCH_LANGUAGES=en,ja,de   # Search trends in English, Japanese, German
 ```
 
 ### Post variants (A/B testing)
@@ -74,10 +74,10 @@ BOT_POST_VARIANTS=deep-insight            # Only long-form
 ```
 
 Example **hot-take** output:
-> "La mayoria sobrevalua ChatGPT, cuando Jasper hace el trabajo igual de bien sin tantas limitaciones. Convenceme que estoy equivocado #ProductividadAI"
+> "Everyone pays for Midjourney when Ideogram does it free. Change my mind. #AI"
 
 Example **deep-insight** output:
-> "El 80% de empresas no ve ganancias en productividad con IA. Pero el problema no es la herramienta, es el proceso. Llevo 2 semanas usando Fireflies para transcribir reuniones y Claude para resumirlas. El combo de ambos ahorra mas que cualquier lista de 50 tools. La clave no es tener mas herramientas, es encadenarlas bien. #IA #Productividad"
+> "80% of companies report zero productivity gains from AI. But the 20% that do have one thing in common: they didn't just adopt tools, they redesigned workflows around them. I switched from using ChatGPT as a chatbot to using it as a pipeline (research > draft > Claude for review > Zapier to publish). Productivity jumped 3x in a week. The tool isn't the bottleneck — your process is. #AI #Productivity"
 
 ### Viral replies
 
@@ -96,7 +96,7 @@ Each reply:
 - Has randomized delays between replies (30-90 seconds) to avoid looking automated
 
 Example reply to a viral tweet about AI tools:
-> "Interesante punto sobre Fireflies. Lo probe 3 meses y el ROI real esta en combinarlo con Notion AI para que las action items se creen solas. Sin eso, solo tienes transcripciones que nadie lee."
+> "The missing piece with Fireflies isn't the transcription — it's what happens after. I piped it into Notion AI to auto-generate action items and suddenly meetings actually led to outcomes. Without that second step, you just have transcripts nobody reads."
 
 ### AI-powered image selection
 
@@ -228,8 +228,8 @@ helm upgrade xbot deploy/helm/ -n xbot-ai -f deploy/helm/secret-values.yaml
 | Variable | Default | Description |
 |---|---|---|
 | `BOT_NICHE` | `technology` | Your niche/topic focus |
-| `BOT_LANGUAGE` | `es` | Language for generated posts |
-| `BOT_SEARCH_LANGUAGES` | `en,pt` | Languages to search trends in |
+| `BOT_LANGUAGE` | `en` | Language for generated posts |
+| `BOT_SEARCH_LANGUAGES` | `en,ja,de` | Languages to search trends in |
 | `BOT_MAX_RESULTS_PER_SEARCH` | `10` | Tweets to fetch per language |
 | `BOT_EXPAND_AUTHORS` | `false` | Fetch author usernames ($0.01/user) |
 | `BOT_POST_MAX_LENGTH` | `280` | Max post length (280 free, up to 25000 premium) |

@@ -12,8 +12,8 @@ config:
   aiModel: "llama-3.3-70b-versatile"
   aiTimeoutSeconds: "120"
   botNiche: "AI tools and productivity"
-  botLanguage: "es"
-  botSearchLanguages: "en,pt"
+  botLanguage: "en"
+  botSearchLanguages: "en,ja,de,fr"
   botMaxResultsPerSearch: "10"
   botExpandAuthors: "false"
   botPostMaxLength: "600"
@@ -23,6 +23,8 @@ config:
   botMinIntervalMinutes: "45"
   botMaxIntervalMinutes: "180"
   botPeakHours: "9,12,15,18,20"
+  botReplyEnabled: "true"
+  botReplyChancePercent: "27"
   debug: "false"
 
 # Sensitive values — override in secret-values.yaml

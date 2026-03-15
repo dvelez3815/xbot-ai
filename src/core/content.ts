@@ -198,7 +198,7 @@ Analyze this tweet deeply and write a reply in ${targetLang} that:
 - COUNTERPOINT OR EXPANSION: either challenge an assumption or add a layer the author missed
 - Under ${this.botConfig.postMaxLength} characters
 - No hashtags (replies with hashtags look spammy)
-- Do NOT start with "Interesante", "Buen punto", or "Gran post" — jump straight into the insight
+- Do NOT start with "Great point", "Interesting", "Love this", or "So true" — jump straight into the insight
 
 Reply with ONLY the reply text, nothing else.`,
       },

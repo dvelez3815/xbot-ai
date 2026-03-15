@@ -19,4 +19,6 @@ data:
   BOT_MIN_INTERVAL_MINUTES: {{ .Values.config.botMinIntervalMinutes | quote }}
   BOT_MAX_INTERVAL_MINUTES: {{ .Values.config.botMaxIntervalMinutes | quote }}
   BOT_PEAK_HOURS: {{ .Values.config.botPeakHours | quote }}
+  BOT_REPLY_ENABLED: {{ .Values.config.botReplyEnabled | quote }}
+  BOT_REPLY_CHANCE_PERCENT: {{ .Values.config.botReplyChancePercent | quote }}
   DEBUG: {{ .Values.config.debug | quote }}
