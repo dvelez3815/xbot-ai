@@ -1,4 +1,5 @@
 import type { AIConfig, BotConfig, TrendTweet, GeneratedPost } from "../types.js";
+import { THINKING_STOP_PATTERNS, TWEET_MAX_LENGTH, TWEET_SHORTEN_THRESHOLD, LANGUAGE_NAMES } from "../constants.js";
 import { log, debug } from "../logger.js";
 
 interface ChatMessage {
@@ -11,25 +12,13 @@ interface ChatMessage {
  * Models like Qwen 3.5 emit the answer followed by reasoning tokens.
  */
 function cleanModelOutput(raw: string): string {
-  // Cut at common end-of-generation / thinking tokens
-  const stopPatterns = [
-    "<|endoftext|>",
-    "<|im_end|>",
-    "<|im_start|>",
-    "</think>",
-    "<think>",
-    "</s>",
-    "<|eot_id|>",
-  ];
-
   let cleaned = raw;
-  for (const pattern of stopPatterns) {
+  for (const pattern of THINKING_STOP_PATTERNS) {
     const idx = cleaned.indexOf(pattern);
     if (idx !== -1) {
       cleaned = cleaned.slice(0, idx);
     }
   }
-
   return cleaned.trim();
 }
 
@@ -139,12 +128,7 @@ export class ContentEngine {
 
     debug("generate:inspiration", tweetSummaries);
 
-    const langNames: Record<string, string> = {
-      es: "Spanish", en: "English", pt: "Portuguese", fr: "French",
-      de: "German", it: "Italian", ja: "Japanese", ko: "Korean",
-      zh: "Chinese", ar: "Arabic", ru: "Russian",
-    };
-    const targetLang = langNames[this.botConfig.language] ?? this.botConfig.language;
+    const targetLang = LANGUAGE_NAMES[this.botConfig.language] ?? this.botConfig.language;
 
     log("Generating post with AI...");
     const text = await chatCompletion(this.aiConfig, [
@@ -173,7 +157,7 @@ Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
     let finalText = text;
 
     // If slightly over limit, ask AI to shorten it
-    if (finalText && finalText.length > 280 && finalText.length <= 400) {
+    if (finalText && finalText.length > TWEET_MAX_LENGTH && finalText.length <= TWEET_SHORTEN_THRESHOLD) {
       log(`Post too long (${finalText.length} chars), asking AI to shorten...`);
       const shortened = await chatCompletion(this.aiConfig, [
         {
@@ -190,7 +174,7 @@ Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
       finalText = shortened;
     }
 
-    if (!finalText || finalText.length > 280) {
+    if (!finalText || finalText.length > TWEET_MAX_LENGTH) {
       log(`Generated text invalid (length: ${finalText?.length ?? 0}), skipping`);
       debug("generate:rejected", { length: finalText?.length ?? 0, text: finalText });
       return null;

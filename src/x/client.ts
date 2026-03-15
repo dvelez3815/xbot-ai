@@ -1,5 +1,6 @@
 import { TwitterApi } from "twitter-api-v2";
 import type { XCredentials, TrendTweet } from "../types.js";
+import { X_RESERVED_OPERATORS } from "../constants.js";
 import { debug } from "../logger.js";
 
 export class XClient {
@@ -26,9 +27,7 @@ export class XClient {
    * Sorted by relevance (engagement).
    */
   async searchTrending(query: string, lang: string, maxResults = 10, expandAuthors = false): Promise<TrendTweet[]> {
-    // Strip X API reserved operators from user input to prevent query errors
-    const reserved = /\b(AND|OR|NOT)\b/g;
-    const sanitized = query.replace(reserved, "").replace(/\s+/g, " ").trim();
+    const sanitized = query.replace(X_RESERVED_OPERATORS, "").replace(/\s+/g, " ").trim();
     const fullQuery = `(${sanitized}) lang:${lang} -is:retweet -is:reply has:media`;
 
     debug("x:search", { query: fullQuery, maxResults, expandAuthors });
