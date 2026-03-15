@@ -1,0 +1,43 @@
+image:
+  repository: dvelez3815/xbot-ai
+  tag: "latest"
+  pullPolicy: Always
+
+replicas: 1
+
+# Bot configuration (non-sensitive)
+config:
+  aiProvider: "openai"
+  aiBaseUrl: "https://api.groq.com/openai"
+  aiModel: "llama-3.3-70b-versatile"
+  aiTimeoutSeconds: "120"
+  botNiche: "AI tools and productivity"
+  botLanguage: "es"
+  botSearchLanguages: "en,pt"
+  botMaxResultsPerSearch: "10"
+  botExpandAuthors: "false"
+  botPostMaxLength: "600"
+  botPostVariants: "hot-take,deep-insight"
+  botDelayBetweenPostsSeconds: "180"
+  botPostsPerDay: "8"
+  botMinIntervalMinutes: "45"
+  botMaxIntervalMinutes: "180"
+  botPeakHours: "9,12,15,18,20"
+  debug: "false"
+
+# Sensitive values — override in secret-values.yaml
+secrets:
+  xBearerToken: ""
+  xApiKey: ""
+  xApiSecret: ""
+  xAccessToken: ""
+  xAccessSecret: ""
+  aiApiKey: ""
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

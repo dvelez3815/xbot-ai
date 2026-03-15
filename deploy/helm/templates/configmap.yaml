@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  AI_PROVIDER: {{ .Values.config.aiProvider | quote }}
+  AI_BASE_URL: {{ .Values.config.aiBaseUrl | quote }}
+  AI_MODEL: {{ .Values.config.aiModel | quote }}
+  AI_TIMEOUT_SECONDS: {{ .Values.config.aiTimeoutSeconds | quote }}
+  BOT_NICHE: {{ .Values.config.botNiche | quote }}
+  BOT_LANGUAGE: {{ .Values.config.botLanguage | quote }}
+  BOT_SEARCH_LANGUAGES: {{ .Values.config.botSearchLanguages | quote }}
+  BOT_MAX_RESULTS_PER_SEARCH: {{ .Values.config.botMaxResultsPerSearch | quote }}
+  BOT_EXPAND_AUTHORS: {{ .Values.config.botExpandAuthors | quote }}
+  BOT_POST_MAX_LENGTH: {{ .Values.config.botPostMaxLength | quote }}
+  BOT_POST_VARIANTS: {{ .Values.config.botPostVariants | quote }}
+  BOT_DELAY_BETWEEN_POSTS_SECONDS: {{ .Values.config.botDelayBetweenPostsSeconds | quote }}
+  BOT_POSTS_PER_DAY: {{ .Values.config.botPostsPerDay | quote }}
+  BOT_MIN_INTERVAL_MINUTES: {{ .Values.config.botMinIntervalMinutes | quote }}
+  BOT_MAX_INTERVAL_MINUTES: {{ .Values.config.botMaxIntervalMinutes | quote }}
+  BOT_PEAK_HOURS: {{ .Values.config.botPeakHours | quote }}
+  DEBUG: {{ .Values.config.debug | quote }}
