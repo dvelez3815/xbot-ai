@@ -1,0 +1,27 @@
+services:
+  xbot:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    # Connect to Ollama running on host machine
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # For Ollama: use AI_BASE_URL=http://host.docker.internal:11434 in .env
+
+  # Optional: run Ollama inside Docker (remove if using host Ollama or cloud providers)
+  # ollama:
+  #   image: ollama/ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [gpu]
+
+# volumes:
+#   ollama_data:
