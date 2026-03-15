@@ -1,0 +1,6 @@
+# Override for AI tools niche
+config:
+  botNiche: "AI tools and productivity"
+  botPostsPerDay: "8"
+  botLanguage: "en"
+  botSearchLanguages: "en,ja,de"
