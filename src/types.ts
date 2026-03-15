@@ -3,8 +3,12 @@ export interface BotConfig {
   niche: string;
   /** Language code for the bot's posts (e.g., "es", "en", "pt") */
   language: string;
-  /** Language codes to search trends in (e.g., ["en", "pt", "fr"]) */
+  /** Language codes to search trends in (e.g., ["en", "pt"]) */
   searchLanguages: string[];
+  /** Max tweets to fetch per language per search */
+  maxResultsPerSearch: number;
+  /** Expand author info (costs $0.01/user — disable to save) */
+  expandAuthors: boolean;
   /** Maximum posts per day */
   postsPerDay: number;
   /** Minimum minutes between posts */

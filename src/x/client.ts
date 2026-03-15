@@ -25,19 +25,32 @@ export class XClient {
    * Search recent tweets about a topic in a specific language.
    * Sorted by relevance (engagement).
    */
-  async searchTrending(query: string, lang: string, maxResults = 20): Promise<TrendTweet[]> {
+  async searchTrending(query: string, lang: string, maxResults = 10, expandAuthors = false): Promise<TrendTweet[]> {
     const fullQuery = `${query} lang:${lang} -is:retweet -is:reply has:media`;
 
-    debug("x:search", { query: fullQuery, maxResults });
+    debug("x:search", { query: fullQuery, maxResults, expandAuthors });
 
-    const result = await this.readClient.v2.search(fullQuery, {
+    const expansions: string[] = ["attachments.media_keys"];
+    const userFields: string[] = [];
+
+    if (expandAuthors) {
+      expansions.push("author_id");
+      userFields.push("username");
+    }
+
+    const searchOptions: Record<string, unknown> = {
       max_results: Math.min(maxResults, 100),
       "tweet.fields": ["created_at", "public_metrics", "lang", "attachments"],
-      "user.fields": ["username"],
       "media.fields": ["url", "preview_image_url", "type"],
-      expansions: ["author_id", "attachments.media_keys"],
+      expansions,
       sort_order: "relevancy",
-    });
+    };
+
+    if (userFields.length > 0) {
+      searchOptions["user.fields"] = userFields;
+    }
+
+    const result = await this.readClient.v2.search(fullQuery, searchOptions);
 
     debug("x:search:raw", {
       dataCount: result.data?.data?.length ?? 0,
@@ -46,8 +59,10 @@ export class XClient {
     });
 
     const users = new Map<string, string>();
-    for (const user of result.includes?.users ?? []) {
-      users.set(user.id, user.username);
+    if (expandAuthors) {
+      for (const user of result.includes?.users ?? []) {
+        users.set(user.id, user.username);
+      }
     }
 
     const mediaMap = new Map<string, string>();
@@ -69,7 +84,7 @@ export class XClient {
       tweets.push({
         id: tweet.id,
         text: tweet.text,
-        authorUsername: users.get(tweet.author_id ?? "") ?? "unknown",
+        authorUsername: expandAuthors ? (users.get(tweet.author_id ?? "") ?? "anonymous") : "anonymous",
         lang: tweet.lang ?? lang,
         likeCount: metrics?.like_count ?? 0,
         retweetCount: metrics?.retweet_count ?? 0,

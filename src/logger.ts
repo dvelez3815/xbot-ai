@@ -1,11 +1,28 @@
+import { appendFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 const isDebug = process.env.DEBUG === "true" || process.env.DEBUG === "1";
+const logFile = process.env.LOG_FILE || "";
+const logFilePath = logFile ? resolve(logFile) : "";
+
+// Create/truncate log file on startup
+if (logFilePath) {
+  writeFileSync(logFilePath, `--- xbot-ai started at ${new Date().toISOString()} ---\n`);
+}
 
 function timestamp(): string {
   return new Date().toISOString().slice(11, 19);
 }
 
+function write(line: string): void {
+  console.log(line);
+  if (logFilePath) {
+    appendFileSync(logFilePath, line + "\n");
+  }
+}
+
 export function log(message: string): void {
-  console.log(`[${timestamp()}] ${message}`);
+  write(`[${timestamp()}] ${message}`);
 }
 
 export function debug(label: string, data?: unknown): void {
@@ -14,19 +31,18 @@ export function debug(label: string, data?: unknown): void {
   const prefix = `[${timestamp()}] [DEBUG:${label}]`;
 
   if (data === undefined) {
-    console.log(`${prefix}`);
+    write(prefix);
     return;
   }
 
   if (typeof data === "string") {
-    // For long strings, print with clear boundaries
     if (data.length > 120) {
-      console.log(`${prefix}\n${"─".repeat(60)}\n${data}\n${"─".repeat(60)}`);
+      write(`${prefix}\n${"─".repeat(60)}\n${data}\n${"─".repeat(60)}`);
     } else {
-      console.log(`${prefix} ${data}`);
+      write(`${prefix} ${data}`);
     }
     return;
   }
 
-  console.log(`${prefix}\n${JSON.stringify(data, null, 2)}`);
+  write(`${prefix}\n${JSON.stringify(data, null, 2)}`);
 }

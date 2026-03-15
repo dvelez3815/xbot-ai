@@ -13,6 +13,10 @@ function optionalEnv(key: string, fallback: string): string {
   return process.env[key] || fallback;
 }
 
+function parseBool(value: string): boolean {
+  return value === "true" || value === "1";
+}
+
 function parseNumberList(value: string): number[] {
   return value.split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n));
 }
@@ -37,8 +41,10 @@ export function loadConfig(): AppConfig {
     bot: {
       niche: optionalEnv("BOT_NICHE", "technology"),
       language: optionalEnv("BOT_LANGUAGE", "es"),
-      searchLanguages: optionalEnv("BOT_SEARCH_LANGUAGES", "en,pt,fr").split(",").map((s) => s.trim()),
-      postsPerDay: parseInt(optionalEnv("BOT_POSTS_PER_DAY", "8"), 10),
+      searchLanguages: optionalEnv("BOT_SEARCH_LANGUAGES", "en,pt").split(",").map((s) => s.trim()),
+      maxResultsPerSearch: parseInt(optionalEnv("BOT_MAX_RESULTS_PER_SEARCH", "10"), 10),
+      expandAuthors: parseBool(optionalEnv("BOT_EXPAND_AUTHORS", "false")),
+      postsPerDay: parseInt(optionalEnv("BOT_POSTS_PER_DAY", "4"), 10),
       minIntervalMinutes: parseInt(optionalEnv("BOT_MIN_INTERVAL_MINUTES", "45"), 10),
       maxIntervalMinutes: parseInt(optionalEnv("BOT_MAX_INTERVAL_MINUTES", "180"), 10),
       peakHours: parseNumberList(optionalEnv("BOT_PEAK_HOURS", "9,12,15,18,20")),

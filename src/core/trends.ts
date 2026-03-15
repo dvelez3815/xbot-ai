@@ -15,7 +15,12 @@ export async function findTrendingContent(
   for (const lang of config.searchLanguages) {
     log(`Searching trends for "${config.niche}" in [${lang}]...`);
     try {
-      const tweets = await xClient.searchTrending(config.niche, lang, 15);
+      const tweets = await xClient.searchTrending(
+        config.niche,
+        lang,
+        config.maxResultsPerSearch,
+        config.expandAuthors,
+      );
       log(`  Found ${tweets.length} tweets in [${lang}]`);
       debug(`trends:${lang}`, tweets.map((t) => ({
         id: t.id,
@@ -25,7 +30,7 @@ export async function findTrendingContent(
         hasMedia: t.mediaUrls.length > 0,
         text: t.text.slice(0, 100),
       })));
-    allTweets.push(...tweets);
+      allTweets.push(...tweets);
     } catch (err) {
       log(`  Error searching [${lang}]: ${err instanceof Error ? err.message : err}`);
     }
