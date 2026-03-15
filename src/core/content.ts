@@ -1,4 +1,5 @@
 import type { AIConfig, BotConfig, TrendTweet, GeneratedPost } from "../types.js";
+import type { PostVariant } from "./variants/index.js";
 import { createProvider, type AIProvider, type ChatMessage } from "../providers/index.js";
 import { LANGUAGE_NAMES } from "../constants.js";
 import { log, debug } from "../logger.js";
@@ -18,9 +19,9 @@ export class ContentEngine {
   }
 
   /**
-   * Analyze trending tweets and generate an original post in the bot's language.
+   * Generate a post using a specific variant's prompts.
    */
-  async generatePost(trendingTweets: TrendTweet[]): Promise<GeneratedPost | null> {
+  async generatePost(trendingTweets: TrendTweet[], variant: PostVariant): Promise<GeneratedPost | null> {
     if (trendingTweets.length === 0) {
       log("No trending tweets to generate from");
       return null;
@@ -34,66 +35,44 @@ export class ContentEngine {
     debug("generate:inspiration", tweetSummaries);
 
     const targetLang = LANGUAGE_NAMES[this.botConfig.language] ?? this.botConfig.language;
+    const maxLength = variant.maxLength;
 
-    log("Generating post with AI...");
+    log(`Generating [${variant.name}] post (${variant.minLength}-${maxLength} chars)...`);
+    const tag = `generate:${variant.id}`;
+
     const text = await this.chat([
-      {
-        role: "system",
-        content: `You are a sharp, opinionated social media creator specialized in "${this.botConfig.niche}". You write in ${targetLang}. You sound like a real person who actually uses these tools daily — not a marketer. You ALWAYS mention specific tools, features, or techniques by name. You never write vague or generic content. You love sparking debate and getting people to reply with their own experiences.`,
-      },
-      {
-        role: "user",
-        content: `Here are trending tweets about "${this.botConfig.niche}" from various languages:
-${tweetSummaries}
-
-Create ONE original post in ${targetLang}. Rules:
-- BE SPECIFIC: mention real tool names, features, or techniques from the trends above
-- If the trends mention tools (ChatGPT, Claude, Fireflies, etc.), reference them by name
-- Add your own take: a tip, a comparison, an opinion, or a "here's what most people miss"
-- SPARK DEBATE: include a mildly controversial opinion, a hot take, or a comparison that makes people want to reply
-  Examples of good debate starters:
-  - "Everyone recommends X but honestly Y does it better because..."
-  - "Unpopular opinion: the free version of X beats the paid Z for..."
-  - "I switched from X to Y last week. Here's what surprised me..."
-  - "People sleep on X while paying for Y. Makes no sense."
-- End with a question or challenge that invites people to share their experience (not just "what do you think?" — be specific: "Has anyone tried X for [specific task]?" or "Convince me I'm wrong")
-- Sound like someone who genuinely uses these tools, not a bot listing features
-- 1-3 relevant hashtags max
-- MUST be under ${this.botConfig.postMaxLength} characters (HARD limit)
-- If the image from the source tweet shows a list or infographic, reference specific items from it
-
-Reply with ONLY the post text, nothing else.`,
-      },
-    ], "generate");
+      { role: "system", content: variant.systemPrompt(this.botConfig.niche, targetLang) },
+      { role: "user", content: variant.userPrompt(this.botConfig.niche, targetLang, maxLength, tweetSummaries) },
+    ], tag);
 
     let finalText = text;
 
-    // If slightly over limit, ask AI to shorten it
-    const shortenThreshold = Math.floor(this.botConfig.postMaxLength * 1.4);
-    if (finalText && finalText.length > this.botConfig.postMaxLength && finalText.length <= shortenThreshold) {
-      log(`Post too long (${finalText.length} chars), asking AI to shorten...`);
+    // If slightly over limit, ask AI to shorten
+    const shortenThreshold = Math.floor(maxLength * 1.4);
+    if (finalText && finalText.length > maxLength && finalText.length <= shortenThreshold) {
+      log(`Post too long (${finalText.length}/${maxLength} chars), asking AI to shorten...`);
       const shortened = await this.chat([
         {
           role: "system",
-          content: "You shorten tweets. Keep the same meaning and tone. Reply with ONLY the shortened tweet.",
+          content: "You shorten social media posts. Keep the same meaning, tone, and specificity. Reply with ONLY the shortened post.",
         },
         {
           role: "user",
-          content: `This tweet is ${finalText.length} characters but must be under ${this.botConfig.postMaxLength}. Shorten it without losing the core message. Remove line breaks. Keep hashtags.\n\nTweet: "${finalText}"`,
+          content: `This post is ${finalText.length} characters but must be under ${maxLength}. Shorten it without losing specific tool names or the core message. Keep hashtags.\n\nPost: "${finalText}"`,
         },
-      ], "shorten");
+      ], `shorten:${variant.id}`);
 
       debug("shorten:result", { original: finalText.length, shortened: shortened.length, text: shortened });
       finalText = shortened;
     }
 
-    if (!finalText || finalText.length > this.botConfig.postMaxLength) {
-      log(`Generated text invalid (length: ${finalText?.length ?? 0}), skipping`);
-      debug("generate:rejected", { length: finalText?.length ?? 0, text: finalText });
+    if (!finalText || finalText.length > maxLength) {
+      log(`Generated text invalid (length: ${finalText?.length ?? 0}, max: ${maxLength}), skipping`);
+      debug("generate:rejected", { variant: variant.id, length: finalText?.length ?? 0, text: finalText });
       return null;
     }
 
-    // Ask AI to pick the most relevant image for the generated post
+    // Ask AI to pick the most relevant image
     const tweetsWithMedia = inspiration.filter((t) => t.mediaUrls.length > 0);
     let chosenImageUrl: string | undefined;
 
@@ -104,13 +83,14 @@ Reply with ONLY the post text, nothing else.`,
 
     const bestSource = tweetsWithMedia.find((t) => t.mediaUrls[0] === chosenImageUrl) ?? inspiration[0];
 
-    log(`Generated post (${finalText.length} chars): "${finalText.slice(0, 80)}..."`);
-    debug("generate:final", { text: finalText, hasImage: Boolean(chosenImageUrl), imageUrl: chosenImageUrl });
+    log(`[${variant.name}] post (${finalText.length} chars): "${finalText.slice(0, 80)}..."`);
+    debug("generate:final", { variant: variant.id, text: finalText, hasImage: Boolean(chosenImageUrl), imageUrl: chosenImageUrl });
 
     return {
       text: finalText,
       imageUrl: chosenImageUrl,
       sourceTweet: bestSource,
+      variantId: variant.id,
     };
   }
 
@@ -129,7 +109,7 @@ Reply with ONLY the post text, nothing else.`,
       },
       {
         role: "user",
-        content: `Here is a tweet that will be posted:
+        content: `Here is a post that will be published:
 "${postText}"
 
 Here are available images from source tweets:
@@ -175,9 +155,9 @@ Reply with JSON only.`,
       },
       {
         role: "user",
-        content: `Check if this tweet is safe to post and stays on topic for "${this.botConfig.niche}".
+        content: `Check if this post is safe to publish and stays on topic for "${this.botConfig.niche}".
 
-Tweet: "${text}"
+Post: "${text}"
 
 Reply with JSON only: {"safe": true} or {"safe": false, "reason": "why"}`,
       },

@@ -11,7 +11,11 @@ export interface BotConfig {
   expandAuthors: boolean;
   /** Max characters per post (free: 280, premium: up to 25000) */
   postMaxLength: number;
-  /** Maximum posts per day */
+  /** Active variant IDs for A/B testing */
+  postVariants: string[];
+  /** Seconds to wait between posts in the same cycle */
+  delayBetweenPostsSeconds: number;
+  /** Maximum posts per day (total across all variants) */
   postsPerDay: number;
   /** Minimum minutes between posts */
   minIntervalMinutes: number;
@@ -61,6 +65,7 @@ export interface GeneratedPost {
   text: string;
   imageUrl?: string;
   sourceTweet: TrendTweet;
+  variantId: string;
   scheduledAt?: Date;
 }
 

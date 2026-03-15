@@ -6,17 +6,18 @@ import { Scheduler } from "./scheduler/scheduler.js";
 import { EnvKeys } from "./constants.js";
 import { log, debug } from "./logger.js";
 
-function printBanner(niche: string, lang: string, searchLangs: string[], postsPerDay: number): void {
+function printBanner(config: import("./types.js").AppConfig): void {
   console.log(`
   ╔══════════════════════════════════════╗
   ║          xbot-ai v0.1.0             ║
   ║   AI-Powered X/Twitter Automation   ║
   ╚══════════════════════════════════════╝
   `);
-  log(`Niche: "${niche}"`);
-  log(`Post language: ${lang}`);
-  log(`Search languages: ${searchLangs.join(", ")}`);
-  log(`Posts per day: ${postsPerDay}`);
+  log(`Niche: "${config.bot.niche}"`);
+  log(`Post language: ${config.bot.language}`);
+  log(`Search languages: ${config.bot.searchLanguages.join(", ")}`);
+  log(`Variants: ${config.bot.postVariants.join(", ")}`);
+  log(`Posts per day: ${config.bot.postsPerDay} (${config.bot.postVariants.length} per cycle)`);
   if (process.env[EnvKeys.DEBUG] === "true" || process.env[EnvKeys.DEBUG] === "1") {
     log("DEBUG mode: ON");
   }
@@ -26,12 +27,7 @@ function printBanner(niche: string, lang: string, searchLangs: string[], postsPe
 async function main(): Promise<void> {
   const config = loadConfig();
 
-  printBanner(
-    config.bot.niche,
-    config.bot.language,
-    config.bot.searchLanguages,
-    config.bot.postsPerDay,
-  );
+  printBanner(config);
 
   debug("config:loaded", {
     aiProvider: config.ai.provider,
@@ -56,11 +52,11 @@ async function main(): Promise<void> {
   // Start the bot
   log("Starting bot...");
   scheduler.start(async () => {
-    const result = await engine.cycle();
-    if (result.success) {
-      log(`Successfully posted tweet: ${result.tweetId}`);
-    } else {
-      log(`Cycle completed without posting: ${result.error}`);
+    const cycle = await engine.cycle();
+    if (cycle.totalPosted > 0) {
+      log(`Cycle summary: ${cycle.totalPosted} posted, ${cycle.totalFailed} failed`);
+    } else if (cycle.results.length > 0) {
+      log(`Cycle completed without posting: ${cycle.results.map((r) => r.error).join(", ")}`);
     }
   });
 }
