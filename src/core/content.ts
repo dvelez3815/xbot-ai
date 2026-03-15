@@ -7,6 +7,33 @@ interface ChatMessage {
 }
 
 /**
+ * Strip thinking model artifacts from the response.
+ * Models like Qwen 3.5 emit the answer followed by reasoning tokens.
+ */
+function cleanModelOutput(raw: string): string {
+  // Cut at common end-of-generation / thinking tokens
+  const stopPatterns = [
+    "<|endoftext|>",
+    "<|im_end|>",
+    "<|im_start|>",
+    "</think>",
+    "<think>",
+    "</s>",
+    "<|eot_id|>",
+  ];
+
+  let cleaned = raw;
+  for (const pattern of stopPatterns) {
+    const idx = cleaned.indexOf(pattern);
+    if (idx !== -1) {
+      cleaned = cleaned.slice(0, idx);
+    }
+  }
+
+  return cleaned.trim();
+}
+
+/**
  * Calls Ollama's native chat API or Anthropic's API depending on config.
  */
 async function chatCompletion(config: AIConfig, messages: ChatMessage[], tag: string): Promise<string> {
@@ -43,8 +70,12 @@ async function chatCompletion(config: AIConfig, messages: ChatMessage[], tag: st
       eval_count?: number;
     };
     const elapsed = Date.now() - start;
-    const result = data.message.content.trim();
+    const rawResult = data.message.content.trim();
+    const result = cleanModelOutput(rawResult);
 
+    if (rawResult.length !== result.length) {
+      debug(`${tag}:cleaned`, `${rawResult.length} chars -> ${result.length} chars (stripped ${rawResult.length - result.length} chars of thinking tokens)`);
+    }
     debug(`${tag}:response`, result);
     debug(`${tag}:stats`, {
       elapsed: `${elapsed}ms`,
