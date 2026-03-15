@@ -66,9 +66,9 @@ export class ContentEngine {
       finalText = shortened;
     }
 
-    if (!finalText || finalText.length > maxLength) {
-      log(`Generated text invalid (length: ${finalText?.length ?? 0}, max: ${maxLength}), skipping`);
-      debug("generate:rejected", { variant: variant.id, length: finalText?.length ?? 0, text: finalText });
+    if (!finalText || finalText.length > maxLength || finalText.length < variant.minLength) {
+      log(`Generated text invalid (length: ${finalText?.length ?? 0}, required: ${variant.minLength}-${maxLength}), skipping`);
+      debug("generate:rejected", { variant: variant.id, length: finalText?.length ?? 0, min: variant.minLength, max: maxLength, text: finalText });
       return null;
     }
 
