@@ -27,8 +27,10 @@ export interface XCredentials {
   accessSecret: string;
 }
 
+import type { AIProviderType } from "./constants.js";
+
 export interface AIConfig {
-  provider: "ollama" | "anthropic";
+  provider: AIProviderType;
   baseUrl: string;
   apiKey: string;
   model: string;

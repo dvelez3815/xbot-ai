@@ -1,8 +1,9 @@
 import { appendFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { EnvKeys } from "./constants.js";
 
-const isDebug = process.env.DEBUG === "true" || process.env.DEBUG === "1";
-const logFile = process.env.LOG_FILE || "";
+const isDebug = process.env[EnvKeys.DEBUG] === "true" || process.env[EnvKeys.DEBUG] === "1";
+const logFile = process.env[EnvKeys.LOG_FILE] || "";
 const logFilePath = logFile ? resolve(logFile) : "";
 
 // Create/truncate log file on startup

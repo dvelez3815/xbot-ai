@@ -1,5 +1,6 @@
 import "dotenv/config";
 import type { AppConfig } from "./types.js";
+import { AIProviders, AI_PROVIDER_DEFAULTS, EnvKeys, type AIProviderType } from "./constants.js";
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -22,33 +23,34 @@ function parseNumberList(value: string): number[] {
 }
 
 export function loadConfig(): AppConfig {
-  const provider = optionalEnv("AI_PROVIDER", "ollama") as "ollama" | "anthropic";
+  const provider = optionalEnv(EnvKeys.AI_PROVIDER, AIProviders.OLLAMA) as AIProviderType;
+  const defaults = AI_PROVIDER_DEFAULTS[provider] ?? AI_PROVIDER_DEFAULTS[AIProviders.OLLAMA];
 
   return {
     x: {
-      bearerToken: requireEnv("X_BEARER_TOKEN"),
-      apiKey: requireEnv("X_API_KEY"),
-      apiSecret: requireEnv("X_API_SECRET"),
-      accessToken: requireEnv("X_ACCESS_TOKEN"),
-      accessSecret: requireEnv("X_ACCESS_SECRET"),
+      bearerToken: requireEnv(EnvKeys.X_BEARER_TOKEN),
+      apiKey: requireEnv(EnvKeys.X_API_KEY),
+      apiSecret: requireEnv(EnvKeys.X_API_SECRET),
+      accessToken: requireEnv(EnvKeys.X_ACCESS_TOKEN),
+      accessSecret: requireEnv(EnvKeys.X_ACCESS_SECRET),
     },
     ai: {
       provider,
-      baseUrl: optionalEnv("AI_BASE_URL", provider === "ollama" ? "http://localhost:11434" : "https://api.anthropic.com"),
-      apiKey: optionalEnv("AI_API_KEY", ""),
-      model: optionalEnv("AI_MODEL", provider === "ollama" ? "qwen3.5:9b" : "claude-sonnet-4-20250514"),
-      timeoutSeconds: parseInt(optionalEnv("AI_TIMEOUT_SECONDS", "300"), 10),
+      baseUrl: optionalEnv(EnvKeys.AI_BASE_URL, defaults.baseUrl),
+      apiKey: optionalEnv(EnvKeys.AI_API_KEY, ""),
+      model: optionalEnv(EnvKeys.AI_MODEL, defaults.model),
+      timeoutSeconds: parseInt(optionalEnv(EnvKeys.AI_TIMEOUT_SECONDS, "300"), 10),
     },
     bot: {
-      niche: optionalEnv("BOT_NICHE", "technology"),
-      language: optionalEnv("BOT_LANGUAGE", "es"),
-      searchLanguages: optionalEnv("BOT_SEARCH_LANGUAGES", "en,pt").split(",").map((s) => s.trim()),
-      maxResultsPerSearch: parseInt(optionalEnv("BOT_MAX_RESULTS_PER_SEARCH", "10"), 10),
-      expandAuthors: parseBool(optionalEnv("BOT_EXPAND_AUTHORS", "false")),
-      postsPerDay: parseInt(optionalEnv("BOT_POSTS_PER_DAY", "4"), 10),
-      minIntervalMinutes: parseInt(optionalEnv("BOT_MIN_INTERVAL_MINUTES", "45"), 10),
-      maxIntervalMinutes: parseInt(optionalEnv("BOT_MAX_INTERVAL_MINUTES", "180"), 10),
-      peakHours: parseNumberList(optionalEnv("BOT_PEAK_HOURS", "9,12,15,18,20")),
+      niche: optionalEnv(EnvKeys.BOT_NICHE, "technology"),
+      language: optionalEnv(EnvKeys.BOT_LANGUAGE, "es"),
+      searchLanguages: optionalEnv(EnvKeys.BOT_SEARCH_LANGUAGES, "en,pt").split(",").map((s) => s.trim()),
+      maxResultsPerSearch: parseInt(optionalEnv(EnvKeys.BOT_MAX_RESULTS_PER_SEARCH, "10"), 10),
+      expandAuthors: parseBool(optionalEnv(EnvKeys.BOT_EXPAND_AUTHORS, "false")),
+      postsPerDay: parseInt(optionalEnv(EnvKeys.BOT_POSTS_PER_DAY, "4"), 10),
+      minIntervalMinutes: parseInt(optionalEnv(EnvKeys.BOT_MIN_INTERVAL_MINUTES, "45"), 10),
+      maxIntervalMinutes: parseInt(optionalEnv(EnvKeys.BOT_MAX_INTERVAL_MINUTES, "180"), 10),
+      peakHours: parseNumberList(optionalEnv(EnvKeys.BOT_PEAK_HOURS, "9,12,15,18,20")),
     },
   };
 }

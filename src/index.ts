@@ -3,6 +3,7 @@
 import { loadConfig } from "./config.js";
 import { Engine } from "./core/engine.js";
 import { Scheduler } from "./scheduler/scheduler.js";
+import { EnvKeys } from "./constants.js";
 import { log, debug } from "./logger.js";
 
 function printBanner(niche: string, lang: string, searchLangs: string[], postsPerDay: number): void {
@@ -16,7 +17,7 @@ function printBanner(niche: string, lang: string, searchLangs: string[], postsPe
   log(`Post language: ${lang}`);
   log(`Search languages: ${searchLangs.join(", ")}`);
   log(`Posts per day: ${postsPerDay}`);
-  if (process.env.DEBUG === "true" || process.env.DEBUG === "1") {
+  if (process.env[EnvKeys.DEBUG] === "true" || process.env[EnvKeys.DEBUG] === "1") {
     log("DEBUG mode: ON");
   }
   console.log();

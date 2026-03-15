@@ -1,115 +1,20 @@
 import type { AIConfig, BotConfig, TrendTweet, GeneratedPost } from "../types.js";
-import { THINKING_STOP_PATTERNS, TWEET_MAX_LENGTH, TWEET_SHORTEN_THRESHOLD, LANGUAGE_NAMES } from "../constants.js";
+import { createProvider, type AIProvider, type ChatMessage } from "../providers/index.js";
+import { TWEET_MAX_LENGTH, TWEET_SHORTEN_THRESHOLD, LANGUAGE_NAMES } from "../constants.js";
 import { log, debug } from "../logger.js";
 
-interface ChatMessage {
-  role: "user" | "assistant" | "system";
-  content: string;
-}
-
-/**
- * Strip thinking model artifacts from the response.
- * Models like Qwen 3.5 emit the answer followed by reasoning tokens.
- */
-function cleanModelOutput(raw: string): string {
-  let cleaned = raw;
-  for (const pattern of THINKING_STOP_PATTERNS) {
-    const idx = cleaned.indexOf(pattern);
-    if (idx !== -1) {
-      cleaned = cleaned.slice(0, idx);
-    }
-  }
-  return cleaned.trim();
-}
-
-/**
- * Calls Ollama's native chat API or Anthropic's API depending on config.
- */
-async function chatCompletion(config: AIConfig, messages: ChatMessage[], tag: string): Promise<string> {
-  if (config.provider === "ollama") {
-    const payload = {
-      model: config.model,
-      messages,
-      stream: false,
-    };
-
-    debug(`${tag}:request`, {
-      url: `${config.baseUrl}/api/chat`,
-      model: config.model,
-      messageCount: messages.length,
-    });
-    debug(`${tag}:prompt`, messages.map((m) => `[${m.role}] ${m.content}`).join("\n\n"));
-
-    const timeoutMs = config.timeoutSeconds * 1000;
-    const start = Date.now();
-    const response = await fetch(`${config.baseUrl}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-
-    if (!response.ok) {
-      const body = await response.text();
-      debug(`${tag}:error`, { status: response.status, body });
-      throw new Error(`Ollama error: ${response.status} ${body}`);
-    }
-
-    const data = (await response.json()) as {
-      message: { content: string };
-      total_duration?: number;
-      eval_count?: number;
-    };
-    const elapsed = Date.now() - start;
-    const rawResult = data.message.content.trim();
-    const result = cleanModelOutput(rawResult);
-
-    if (rawResult.length !== result.length) {
-      debug(`${tag}:cleaned`, `${rawResult.length} chars -> ${result.length} chars (stripped ${rawResult.length - result.length} chars of thinking tokens)`);
-    }
-    debug(`${tag}:response`, result);
-    debug(`${tag}:stats`, {
-      elapsed: `${elapsed}ms`,
-      tokens: data.eval_count ?? "unknown",
-      tokensPerSec: data.eval_count ? `${(data.eval_count / (elapsed / 1000)).toFixed(1)} t/s` : "unknown",
-    });
-
-    return result;
-  }
-
-  // Anthropic fallback
-  debug(`${tag}:request`, { provider: "anthropic", model: config.model });
-  debug(`${tag}:prompt`, messages.map((m) => `[${m.role}] ${m.content}`).join("\n\n"));
-
-  const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  const client = new Anthropic({ apiKey: config.apiKey });
-
-  const start = Date.now();
-  const response = await client.messages.create({
-    model: config.model,
-    max_tokens: 300,
-    messages: messages
-      .filter((m) => m.role !== "system")
-      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
-    system: messages.find((m) => m.role === "system")?.content,
-  });
-
-  const result = response.content[0].type === "text" ? response.content[0].text.trim() : "";
-  const elapsed = Date.now() - start;
-
-  debug(`${tag}:response`, result);
-  debug(`${tag}:stats`, { elapsed: `${elapsed}ms`, inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens });
-
-  return result;
-}
-
 export class ContentEngine {
-  private aiConfig: AIConfig;
+  private provider: AIProvider;
   private botConfig: BotConfig;
 
   constructor(aiConfig: AIConfig, botConfig: BotConfig) {
-    this.aiConfig = aiConfig;
+    this.provider = createProvider(aiConfig);
     this.botConfig = botConfig;
+  }
+
+  private async chat(messages: ChatMessage[], tag: string): Promise<string> {
+    const result = await this.provider.chatCompletion(messages, tag);
+    return result.text;
   }
 
   /**
@@ -131,7 +36,7 @@ export class ContentEngine {
     const targetLang = LANGUAGE_NAMES[this.botConfig.language] ?? this.botConfig.language;
 
     log("Generating post with AI...");
-    const text = await chatCompletion(this.aiConfig, [
+    const text = await this.chat([
       {
         role: "system",
         content: `You are a social media content creator specialized in "${this.botConfig.niche}". You write in ${targetLang}. You are creative, concise, and sound like a real person.`,
@@ -146,7 +51,7 @@ Create ONE original tweet in ${targetLang} that:
 - Captures the most interesting angle or insight
 - Is engaging, concise, and natural (not robotic or overly promotional)
 - Uses 1-3 relevant hashtags max
-- MUST be under 280 characters (this is a HARD limit, count carefully)
+- MUST be under ${TWEET_MAX_LENGTH} characters (this is a HARD limit, count carefully)
 - Write it as a single short paragraph, avoid line breaks
 - Matches the tone of a real person passionate about ${this.botConfig.niche}
 
@@ -159,14 +64,14 @@ Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
     // If slightly over limit, ask AI to shorten it
     if (finalText && finalText.length > TWEET_MAX_LENGTH && finalText.length <= TWEET_SHORTEN_THRESHOLD) {
       log(`Post too long (${finalText.length} chars), asking AI to shorten...`);
-      const shortened = await chatCompletion(this.aiConfig, [
+      const shortened = await this.chat([
         {
           role: "system",
           content: "You shorten tweets. Keep the same meaning and tone. Reply with ONLY the shortened tweet.",
         },
         {
           role: "user",
-          content: `This tweet is ${finalText.length} characters but must be under 280. Shorten it without losing the core message. Remove line breaks. Keep hashtags.\n\nTweet: "${finalText}"`,
+          content: `This tweet is ${finalText.length} characters but must be under ${TWEET_MAX_LENGTH}. Shorten it without losing the core message. Remove line breaks. Keep hashtags.\n\nTweet: "${finalText}"`,
         },
       ], "shorten");
 
@@ -186,16 +91,16 @@ Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
 
     if (tweetsWithMedia.length > 0) {
       log("Selecting best image for post...");
-      chosenImageUrl = await this.pickRelevantImage(text, tweetsWithMedia);
+      chosenImageUrl = await this.pickRelevantImage(finalText, tweetsWithMedia);
     }
 
     const bestSource = tweetsWithMedia.find((t) => t.mediaUrls[0] === chosenImageUrl) ?? inspiration[0];
 
-    log(`Generated post (${text.length} chars): "${text.slice(0, 80)}..."`);
-    debug("generate:final", { text, hasImage: Boolean(chosenImageUrl), imageUrl: chosenImageUrl });
+    log(`Generated post (${finalText.length} chars): "${finalText.slice(0, 80)}..."`);
+    debug("generate:final", { text: finalText, hasImage: Boolean(chosenImageUrl), imageUrl: chosenImageUrl });
 
     return {
-      text,
+      text: finalText,
       imageUrl: chosenImageUrl,
       sourceTweet: bestSource,
     };
@@ -209,7 +114,7 @@ Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
       `${i + 1}. Tweet: "${t.text.slice(0, 120)}..." | Image URL: ${t.mediaUrls[0]}`
     ).join("\n");
 
-    const raw = await chatCompletion(this.aiConfig, [
+    const raw = await this.chat([
       {
         role: "system",
         content: "You select the most relevant image for a social media post. Reply only with valid JSON.",
@@ -255,7 +160,7 @@ Reply with JSON only.`,
   async moderateContent(text: string): Promise<{ safe: boolean; reason?: string }> {
     log("Moderating content...");
 
-    const raw = await chatCompletion(this.aiConfig, [
+    const raw = await this.chat([
       {
         role: "system",
         content: "You are a content moderator. Reply only with valid JSON.",
