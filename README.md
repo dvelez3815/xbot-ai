@@ -198,6 +198,20 @@ vim deploy/helm/secret-values.yaml
 helm upgrade --install xbot deploy/helm/ -n xbot-ai --create-namespace -f deploy/helm/secret-values.yaml
 ```
 
+### Analyze niches before deploying
+
+Use the built-in niche tester to compare trending content and engagement before committing to a niche:
+
+```bash
+# Analyze a single niche
+npx tsx src/test-niche.ts "AI workflow automation"
+
+# Compare multiple niches side by side
+npx tsx src/test-niche.ts "infosec hacking" "LLM tools" "AI agents" "crypto trading"
+```
+
+The tool shows top tweets, like counts, and query strategy (AND vs OR) for each niche so you can pick the one with the best engagement before deploying a worker.
+
 ## Configuration reference
 
 ### X/Twitter credentials
