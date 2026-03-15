@@ -162,16 +162,37 @@ Create ONE original tweet in ${targetLang} that:
 - Captures the most interesting angle or insight
 - Is engaging, concise, and natural (not robotic or overly promotional)
 - Uses 1-3 relevant hashtags max
-- Stays under 280 characters
+- MUST be under 280 characters (this is a HARD limit, count carefully)
+- Write it as a single short paragraph, avoid line breaks
 - Matches the tone of a real person passionate about ${this.botConfig.niche}
 
-Reply with ONLY the tweet text, nothing else.`,
+Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
       },
     ], "generate");
 
-    if (!text || text.length > 280) {
-      log(`Generated text invalid (length: ${text.length}), skipping`);
-      debug("generate:rejected", { length: text.length, text });
+    let finalText = text;
+
+    // If slightly over limit, ask AI to shorten it
+    if (finalText && finalText.length > 280 && finalText.length <= 400) {
+      log(`Post too long (${finalText.length} chars), asking AI to shorten...`);
+      const shortened = await chatCompletion(this.aiConfig, [
+        {
+          role: "system",
+          content: "You shorten tweets. Keep the same meaning and tone. Reply with ONLY the shortened tweet.",
+        },
+        {
+          role: "user",
+          content: `This tweet is ${finalText.length} characters but must be under 280. Shorten it without losing the core message. Remove line breaks. Keep hashtags.\n\nTweet: "${finalText}"`,
+        },
+      ], "shorten");
+
+      debug("shorten:result", { original: finalText.length, shortened: shortened.length, text: shortened });
+      finalText = shortened;
+    }
+
+    if (!finalText || finalText.length > 280) {
+      log(`Generated text invalid (length: ${finalText?.length ?? 0}), skipping`);
+      debug("generate:rejected", { length: finalText?.length ?? 0, text: finalText });
       return null;
     }
 
