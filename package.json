@@ -15,9 +15,11 @@
   "keywords": ["twitter", "x", "bot", "ai", "automation", "trends"],
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "dotenv": "^16.4.7",
     "twitter-api-v2": "^1.19.0"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

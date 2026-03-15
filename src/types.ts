@@ -24,6 +24,8 @@ export interface XCredentials {
 }
 
 export interface AIConfig {
+  provider: "ollama" | "anthropic";
+  baseUrl: string;
   apiKey: string;
   model: string;
 }

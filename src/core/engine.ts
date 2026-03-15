@@ -1,8 +1,8 @@
-import type { AppConfig, PostResult, GeneratedPost } from "../types.js";
+import type { AppConfig, PostResult } from "../types.js";
 import { XClient } from "../x/client.js";
 import { ContentEngine } from "./content.js";
 import { findTrendingContent } from "./trends.js";
-import { log } from "../logger.js";
+import { log, debug } from "../logger.js";
 
 /**
  * The AI heart of the bot.
@@ -19,6 +19,13 @@ export class Engine {
     this.config = config;
     this.xClient = new XClient(config.x);
     this.contentEngine = new ContentEngine(config.ai, config.bot);
+    debug("engine:init", {
+      provider: config.ai.provider,
+      model: config.ai.model,
+      niche: config.bot.niche,
+      language: config.bot.language,
+      searchLanguages: config.bot.searchLanguages,
+    });
   }
 
   /**
@@ -37,8 +44,9 @@ export class Engine {
     }
 
     try {
-      // 1. Find trending content
+      // Step 1: Find trending content
       log("--- Cycle start ---");
+      debug("cycle:step", "1/5 Searching trending content...");
       const trending = await findTrendingContent(this.xClient, this.config.bot);
 
       if (trending.length === 0) {
@@ -46,31 +54,38 @@ export class Engine {
         return { success: false, error: "no_trends_found", postedAt: new Date() };
       }
 
-      // 2. Generate a post
+      // Step 2: Generate a post
+      debug("cycle:step", "2/5 Generating post with AI...");
       const post = await this.contentEngine.generatePost(trending);
       if (!post) {
         return { success: false, error: "generation_failed", postedAt: new Date() };
       }
 
-      // 3. Moderate content
+      // Step 3: Moderate content
+      debug("cycle:step", "3/5 Moderating content...");
       const moderation = await this.contentEngine.moderateContent(post.text);
       if (!moderation.safe) {
         log(`Post rejected by moderation: ${moderation.reason}`);
         return { success: false, error: `moderation: ${moderation.reason}`, postedAt: new Date() };
       }
 
-      // 4. Download image if available
+      // Step 4: Download image if available
       let imageBuffer: Buffer | undefined;
       if (post.imageUrl) {
+        debug("cycle:step", "4/5 Downloading image...");
         try {
           log(`Downloading image: ${post.imageUrl}`);
           imageBuffer = await this.xClient.downloadImage(post.imageUrl);
+          debug("cycle:image", { size: `${(imageBuffer.length / 1024).toFixed(1)} KB` });
         } catch (err) {
           log(`Image download failed, posting without image: ${err instanceof Error ? err.message : err}`);
         }
+      } else {
+        debug("cycle:step", "4/5 No image available, skipping download");
       }
 
-      // 5. Publish
+      // Step 5: Publish
+      debug("cycle:step", "5/5 Publishing tweet...");
       log(`Publishing: "${post.text.slice(0, 80)}..."`);
       const result = await this.xClient.publishTweet(post.text, imageBuffer);
 
@@ -85,6 +100,7 @@ export class Engine {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       log(`Cycle error: ${message}`);
+      debug("cycle:error", { message, stack: err instanceof Error ? err.stack : undefined });
       return { success: false, error: message, postedAt: new Date() };
     }
   }

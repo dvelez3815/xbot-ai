@@ -1,5 +1,5 @@
 import type { BotConfig } from "../types.js";
-import { log } from "../logger.js";
+import { log, debug } from "../logger.js";
 
 /**
  * Human-like scheduler.
@@ -27,24 +27,33 @@ export class Scheduler {
     let minMs = this.config.minIntervalMinutes * 60_000;
     let maxMs = this.config.maxIntervalMinutes * 60_000;
 
+    debug("scheduler:calc", {
+      hour,
+      isPeak,
+      peakHours: this.config.peakHours,
+      baseRange: `${this.config.minIntervalMinutes}-${this.config.maxIntervalMinutes} min`,
+    });
+
     if (isPeak) {
-      // During peak hours: tighter intervals (60-80% of normal)
       minMs = Math.floor(minMs * 0.6);
       maxMs = Math.floor(maxMs * 0.8);
     } else {
-      // Off-peak: stretch intervals (120-200% of normal)
       minMs = Math.floor(minMs * 1.2);
       maxMs = Math.floor(maxMs * 2.0);
     }
 
-    // Random jitter within the range
     const delay = minMs + Math.floor(Math.random() * (maxMs - minMs));
-
-    // Additional human-like jitter: +/- 15% random noise
     const jitter = delay * 0.15;
     const finalDelay = delay + Math.floor((Math.random() - 0.5) * 2 * jitter);
+    const clamped = Math.max(finalDelay, 60_000);
 
-    return Math.max(finalDelay, 60_000); // Never less than 1 minute
+    debug("scheduler:delay", {
+      adjustedRange: `${Math.round(minMs / 60_000)}-${Math.round(maxMs / 60_000)} min`,
+      baseDelay: `${Math.round(delay / 60_000)} min`,
+      withJitter: `${Math.round(clamped / 60_000)} min`,
+    });
+
+    return clamped;
   }
 
   /**
@@ -77,6 +86,7 @@ export class Scheduler {
     };
 
     // Run first cycle immediately, then schedule
+    debug("scheduler:start", "Running first cycle immediately...");
     onTick()
       .catch((err) => log(`Initial tick error: ${err instanceof Error ? err.message : err}`))
       .then(() => scheduleNext());

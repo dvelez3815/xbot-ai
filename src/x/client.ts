@@ -1,5 +1,6 @@
 import { TwitterApi } from "twitter-api-v2";
 import type { XCredentials, TrendTweet } from "../types.js";
+import { debug } from "../logger.js";
 
 export class XClient {
   private readClient: TwitterApi;
@@ -16,6 +17,8 @@ export class XClient {
       accessToken: credentials.accessToken,
       accessSecret: credentials.accessSecret,
     });
+
+    debug("x:init", "X API clients initialized (read + write)");
   }
 
   /**
@@ -25,6 +28,8 @@ export class XClient {
   async searchTrending(query: string, lang: string, maxResults = 20): Promise<TrendTweet[]> {
     const fullQuery = `${query} lang:${lang} -is:retweet -is:reply has:media`;
 
+    debug("x:search", { query: fullQuery, maxResults });
+
     const result = await this.readClient.v2.search(fullQuery, {
       max_results: Math.min(maxResults, 100),
       "tweet.fields": ["created_at", "public_metrics", "lang", "attachments"],
@@ -32,6 +37,12 @@ export class XClient {
       "media.fields": ["url", "preview_image_url", "type"],
       expansions: ["author_id", "attachments.media_keys"],
       sort_order: "relevancy",
+    });
+
+    debug("x:search:raw", {
+      dataCount: result.data?.data?.length ?? 0,
+      usersCount: result.includes?.users?.length ?? 0,
+      mediaCount: result.includes?.media?.length ?? 0,
     });
 
     const users = new Map<string, string>();
@@ -77,24 +88,34 @@ export class XClient {
    * Download an image from a URL and return the buffer.
    */
   async downloadImage(url: string): Promise<Buffer> {
+    debug("x:download", { url });
+    const start = Date.now();
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
     }
-    return Buffer.from(await response.arrayBuffer());
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    debug("x:download:done", { bytes: buffer.length, elapsed: `${Date.now() - start}ms` });
+    return buffer;
   }
 
   /**
    * Upload media and publish a tweet.
    */
   async publishTweet(text: string, imageBuffer?: Buffer): Promise<{ id: string }> {
+    debug("x:publish", { textLength: text.length, hasImage: Boolean(imageBuffer), imageBytes: imageBuffer?.length });
+
     let mediaId: string | undefined;
 
     if (imageBuffer) {
+      debug("x:upload", "Uploading media to X...");
       // v1 API needed for media upload
       mediaId = await this.writeClient.v1.uploadMedia(imageBuffer, {
         mimeType: "image/jpeg",
       });
+      debug("x:upload:done", { mediaId });
     }
 
     const tweetPayload: Record<string, unknown> = { text };
@@ -102,7 +123,10 @@ export class XClient {
       tweetPayload.media = { media_ids: [mediaId] };
     }
 
+    debug("x:tweet", tweetPayload);
     const result = await this.writeClient.v2.tweet(tweetPayload);
+    debug("x:tweet:done", { tweetId: result.data.id });
+
     return { id: result.data.id };
   }
 }

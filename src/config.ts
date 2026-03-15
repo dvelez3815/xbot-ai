@@ -18,6 +18,8 @@ function parseNumberList(value: string): number[] {
 }
 
 export function loadConfig(): AppConfig {
+  const provider = optionalEnv("AI_PROVIDER", "ollama") as "ollama" | "anthropic";
+
   return {
     x: {
       bearerToken: requireEnv("X_BEARER_TOKEN"),
@@ -27,8 +29,10 @@ export function loadConfig(): AppConfig {
       accessSecret: requireEnv("X_ACCESS_SECRET"),
     },
     ai: {
-      apiKey: requireEnv("ANTHROPIC_API_KEY"),
-      model: optionalEnv("AI_MODEL", "claude-sonnet-4-20250514"),
+      provider,
+      baseUrl: optionalEnv("AI_BASE_URL", provider === "ollama" ? "http://localhost:11434" : "https://api.anthropic.com"),
+      apiKey: optionalEnv("AI_API_KEY", ""),
+      model: optionalEnv("AI_MODEL", provider === "ollama" ? "qwen3.5:9b" : "claude-sonnet-4-20250514"),
     },
     bot: {
       niche: optionalEnv("BOT_NICHE", "technology"),

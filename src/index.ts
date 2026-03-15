@@ -3,7 +3,7 @@
 import { loadConfig } from "./config.js";
 import { Engine } from "./core/engine.js";
 import { Scheduler } from "./scheduler/scheduler.js";
-import { log } from "./logger.js";
+import { log, debug } from "./logger.js";
 
 function printBanner(niche: string, lang: string, searchLangs: string[], postsPerDay: number): void {
   console.log(`
@@ -16,6 +16,9 @@ function printBanner(niche: string, lang: string, searchLangs: string[], postsPe
   log(`Post language: ${lang}`);
   log(`Search languages: ${searchLangs.join(", ")}`);
   log(`Posts per day: ${postsPerDay}`);
+  if (process.env.DEBUG === "true" || process.env.DEBUG === "1") {
+    log("DEBUG mode: ON");
+  }
   console.log();
 }
 
@@ -28,6 +31,14 @@ async function main(): Promise<void> {
     config.bot.searchLanguages,
     config.bot.postsPerDay,
   );
+
+  debug("config:loaded", {
+    aiProvider: config.ai.provider,
+    aiModel: config.ai.model,
+    aiBaseUrl: config.ai.baseUrl,
+    xBearerToken: `${config.x.bearerToken.slice(0, 10)}...`,
+    xApiKey: `${config.x.apiKey.slice(0, 6)}...`,
+  });
 
   const engine = new Engine(config);
   const scheduler = new Scheduler(config.bot);
