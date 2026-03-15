@@ -28,7 +28,11 @@ export class XClient {
    */
   async searchTrending(query: string, lang: string, maxResults = 10, expandAuthors = false): Promise<TrendTweet[]> {
     const sanitized = query.replace(X_RESERVED_OPERATORS, "").replace(/\s+/g, " ").trim();
-    const fullQuery = `(${sanitized}) lang:${lang} -is:retweet -is:reply has:media`;
+    const words = sanitized.split(" ");
+    // Short niches (1-3 words): AND implicit for precision
+    // Long niches (4+ words): OR explicit to avoid zero results
+    const searchTerms = words.length <= 3 ? sanitized : words.join(" OR ");
+    const fullQuery = `(${searchTerms}) lang:${lang} -is:retweet -is:reply has:media`;
 
     debug("x:search", { query: fullQuery, maxResults, expandAuthors });
 

@@ -1,6 +1,6 @@
 # Override for cybersecurity niche
 config:
-  botNiche: "cybersecurity bugs vulnerabilities and tech security news"
+  botNiche: "infosec hacking"
   botPostsPerDay: "6"
   botLanguage: "en"
   botSearchLanguages: "en,de,ja"
