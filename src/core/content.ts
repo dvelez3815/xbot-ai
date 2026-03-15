@@ -1,6 +1,6 @@
 import type { AIConfig, BotConfig, TrendTweet, GeneratedPost } from "../types.js";
 import { createProvider, type AIProvider, type ChatMessage } from "../providers/index.js";
-import { TWEET_MAX_LENGTH, TWEET_SHORTEN_THRESHOLD, LANGUAGE_NAMES } from "../constants.js";
+import { LANGUAGE_NAMES } from "../constants.js";
 import { log, debug } from "../logger.js";
 
 export class ContentEngine {
@@ -39,30 +39,38 @@ export class ContentEngine {
     const text = await this.chat([
       {
         role: "system",
-        content: `You are a social media content creator specialized in "${this.botConfig.niche}". You write in ${targetLang}. You are creative, concise, and sound like a real person.`,
+        content: `You are a sharp, opinionated social media creator specialized in "${this.botConfig.niche}". You write in ${targetLang}. You sound like a real person who actually uses these tools daily — not a marketer. You ALWAYS mention specific tools, features, or techniques by name. You never write vague or generic content. You love sparking debate and getting people to reply with their own experiences.`,
       },
       {
         role: "user",
         content: `Here are trending tweets about "${this.botConfig.niche}" from various languages:
 ${tweetSummaries}
 
-Create ONE original tweet in ${targetLang} that:
-- Is inspired by these trends but is 100% original (never copy/translate directly)
-- Captures the most interesting angle or insight
-- Is engaging, concise, and natural (not robotic or overly promotional)
-- Uses 1-3 relevant hashtags max
-- MUST be under ${TWEET_MAX_LENGTH} characters (this is a HARD limit, count carefully)
-- Write it as a single short paragraph, avoid line breaks
-- Matches the tone of a real person passionate about ${this.botConfig.niche}
+Create ONE original post in ${targetLang}. Rules:
+- BE SPECIFIC: mention real tool names, features, or techniques from the trends above
+- If the trends mention tools (ChatGPT, Claude, Fireflies, etc.), reference them by name
+- Add your own take: a tip, a comparison, an opinion, or a "here's what most people miss"
+- SPARK DEBATE: include a mildly controversial opinion, a hot take, or a comparison that makes people want to reply
+  Examples of good debate starters:
+  - "Everyone recommends X but honestly Y does it better because..."
+  - "Unpopular opinion: the free version of X beats the paid Z for..."
+  - "I switched from X to Y last week. Here's what surprised me..."
+  - "People sleep on X while paying for Y. Makes no sense."
+- End with a question or challenge that invites people to share their experience (not just "what do you think?" — be specific: "Has anyone tried X for [specific task]?" or "Convince me I'm wrong")
+- Sound like someone who genuinely uses these tools, not a bot listing features
+- 1-3 relevant hashtags max
+- MUST be under ${this.botConfig.postMaxLength} characters (HARD limit)
+- If the image from the source tweet shows a list or infographic, reference specific items from it
 
-Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
+Reply with ONLY the post text, nothing else.`,
       },
     ], "generate");
 
     let finalText = text;
 
     // If slightly over limit, ask AI to shorten it
-    if (finalText && finalText.length > TWEET_MAX_LENGTH && finalText.length <= TWEET_SHORTEN_THRESHOLD) {
+    const shortenThreshold = Math.floor(this.botConfig.postMaxLength * 1.4);
+    if (finalText && finalText.length > this.botConfig.postMaxLength && finalText.length <= shortenThreshold) {
       log(`Post too long (${finalText.length} chars), asking AI to shorten...`);
       const shortened = await this.chat([
         {
@@ -71,7 +79,7 @@ Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
         },
         {
           role: "user",
-          content: `This tweet is ${finalText.length} characters but must be under ${TWEET_MAX_LENGTH}. Shorten it without losing the core message. Remove line breaks. Keep hashtags.\n\nTweet: "${finalText}"`,
+          content: `This tweet is ${finalText.length} characters but must be under ${this.botConfig.postMaxLength}. Shorten it without losing the core message. Remove line breaks. Keep hashtags.\n\nTweet: "${finalText}"`,
         },
       ], "shorten");
 
@@ -79,7 +87,7 @@ Reply with ONLY the tweet text, nothing else. No line breaks, no formatting.`,
       finalText = shortened;
     }
 
-    if (!finalText || finalText.length > TWEET_MAX_LENGTH) {
+    if (!finalText || finalText.length > this.botConfig.postMaxLength) {
       log(`Generated text invalid (length: ${finalText?.length ?? 0}), skipping`);
       debug("generate:rejected", { length: finalText?.length ?? 0, text: finalText });
       return null;

@@ -35,6 +35,7 @@ export const EnvKeys = {
   BOT_SEARCH_LANGUAGES: "BOT_SEARCH_LANGUAGES",
   BOT_MAX_RESULTS_PER_SEARCH: "BOT_MAX_RESULTS_PER_SEARCH",
   BOT_EXPAND_AUTHORS: "BOT_EXPAND_AUTHORS",
+  BOT_POST_MAX_LENGTH: "BOT_POST_MAX_LENGTH",
   BOT_POSTS_PER_DAY: "BOT_POSTS_PER_DAY",
   BOT_MIN_INTERVAL_MINUTES: "BOT_MIN_INTERVAL_MINUTES",
   BOT_MAX_INTERVAL_MINUTES: "BOT_MAX_INTERVAL_MINUTES",
@@ -60,8 +61,8 @@ export const THINKING_STOP_PATTERNS = [
   "<|eot_id|>",
 ];
 
-/** Tweet character limit */
-export const TWEET_MAX_LENGTH = 280;
+/** Default tweet character limit (free accounts: 280, premium: up to 25000) */
+export const TWEET_MAX_LENGTH_DEFAULT = 280;
 
 /** Max length for auto-shorten attempts (beyond this, reject outright) */
 export const TWEET_SHORTEN_THRESHOLD = 400;

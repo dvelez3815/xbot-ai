@@ -1,6 +1,6 @@
 import "dotenv/config";
 import type { AppConfig } from "./types.js";
-import { AIProviders, AI_PROVIDER_DEFAULTS, EnvKeys, type AIProviderType } from "./constants.js";
+import { AIProviders, AI_PROVIDER_DEFAULTS, EnvKeys, TWEET_MAX_LENGTH_DEFAULT, type AIProviderType } from "./constants.js";
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -47,6 +47,7 @@ export function loadConfig(): AppConfig {
       searchLanguages: optionalEnv(EnvKeys.BOT_SEARCH_LANGUAGES, "en,pt").split(",").map((s) => s.trim()),
       maxResultsPerSearch: parseInt(optionalEnv(EnvKeys.BOT_MAX_RESULTS_PER_SEARCH, "10"), 10),
       expandAuthors: parseBool(optionalEnv(EnvKeys.BOT_EXPAND_AUTHORS, "false")),
+      postMaxLength: parseInt(optionalEnv(EnvKeys.BOT_POST_MAX_LENGTH, String(TWEET_MAX_LENGTH_DEFAULT)), 10),
       postsPerDay: parseInt(optionalEnv(EnvKeys.BOT_POSTS_PER_DAY, "4"), 10),
       minIntervalMinutes: parseInt(optionalEnv(EnvKeys.BOT_MIN_INTERVAL_MINUTES, "45"), 10),
       maxIntervalMinutes: parseInt(optionalEnv(EnvKeys.BOT_MAX_INTERVAL_MINUTES, "180"), 10),

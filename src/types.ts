@@ -9,6 +9,8 @@ export interface BotConfig {
   maxResultsPerSearch: number;
   /** Expand author info (costs $0.01/user — disable to save) */
   expandAuthors: boolean;
+  /** Max characters per post (free: 280, premium: up to 25000) */
+  postMaxLength: number;
   /** Maximum posts per day */
   postsPerDay: number;
   /** Minimum minutes between posts */
