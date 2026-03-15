@@ -172,4 +172,44 @@ Reply with JSON only: {"safe": true} or {"safe": false, "reason": "why"}`,
       return { safe: true };
     }
   }
+
+  /**
+   * Generate a deep, insightful reply to a viral tweet.
+   */
+  async generateReply(tweet: import("../types.js").TrendTweet): Promise<string | null> {
+    const targetLang = LANGUAGE_NAMES[this.botConfig.language] ?? this.botConfig.language;
+
+    log(`Generating reply to tweet ${tweet.id} (${tweet.likeCount} likes)...`);
+
+    const text = await this.chat([
+      {
+        role: "system",
+        content: `You are a senior practitioner and analyst of "${this.botConfig.niche}" with years of hands-on experience. You write replies in ${targetLang} that make people stop and think. You challenge surface-level takes with nuance and explain the WHY behind things. You never write generic comments.`,
+      },
+      {
+        role: "user",
+        content: `Here is a viral tweet about "${this.botConfig.niche}":
+"${tweet.text}"
+
+Analyze this tweet deeply and write a reply in ${targetLang} that:
+- DEEP ANALYSIS: break down what the author is saying, explain WHY it matters or WHY it's wrong
+- SPECIFIC: reference specific claims, tools, or ideas from the tweet — show you actually read it
+- EXPERIENCE: write as someone with hands-on experience, share a concrete workflow, result, or lesson learned
+- COUNTERPOINT OR EXPANSION: either challenge an assumption or add a layer the author missed
+- Under ${this.botConfig.postMaxLength} characters
+- No hashtags (replies with hashtags look spammy)
+- Do NOT start with "Interesante", "Buen punto", or "Gran post" — jump straight into the insight
+
+Reply with ONLY the reply text, nothing else.`,
+      },
+    ], "reply");
+
+    if (!text || text.length > this.botConfig.postMaxLength) {
+      log(`Reply too long or empty (${text?.length ?? 0} chars), skipping`);
+      return null;
+    }
+
+    debug("reply:generated", { tweetId: tweet.id, length: text.length, text });
+    return text;
+  }
 }

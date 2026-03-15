@@ -23,6 +23,10 @@ export interface BotConfig {
   maxIntervalMinutes: number;
   /** Preferred posting hours (0-23) for higher activity */
   peakHours: number[];
+  /** Enable replying to viral tweets in the niche */
+  replyEnabled: boolean;
+  /** Chance (0-100) of replying to each trending tweet */
+  replyChancePercent: number;
 }
 
 export interface XCredentials {

@@ -1,6 +1,6 @@
 # xbot-ai
 
-AI-powered X/Twitter automation bot that finds trends in your niche, generates original posts using AI, and publishes them with human-like scheduling.
+AI-powered X/Twitter automation bot that finds trends in your niche, generates original posts using AI, replies to viral tweets, and publishes with human-like scheduling.
 
 ## What it does
 
@@ -8,11 +8,12 @@ xbot-ai is an autonomous agent that runs in the background and grows your X acco
 
 1. **Searching trends** in your specific niche across multiple languages
 2. **Generating original posts** using AI (never copies or translates directly)
-3. **Moderating content** automatically before publishing (safety + on-topic check)
-4. **Selecting relevant images** from trending tweets using AI-powered image matching
-5. **Publishing posts** with text + images to your X account
-6. **Scheduling** with human-like intervals (randomized delays, peak-hour awareness)
-7. **A/B testing** post formats to discover what drives more engagement
+3. **Replying to viral tweets** with deep, insightful comments that attract followers
+4. **Moderating content** automatically before publishing (safety + on-topic check)
+5. **Selecting relevant images** from trending tweets using AI-powered image matching
+6. **Publishing posts** with text + images to your X account
+7. **Scheduling** with human-like intervals (randomized delays, peak-hour awareness)
+8. **A/B testing** post formats to discover what drives more engagement
 
 ## How it works
 
@@ -22,28 +23,19 @@ xbot-ai is an autonomous agent that runs in the background and grows your X acco
                     │  (X API, multi-language)  │
                     └────────────┬────────────┘
                                  │
-                    ┌────────────▼────────────┐
-                    │   For each variant:      │
-                    │                          │
-                    │  ┌────────────────────┐  │
-                    │  │  Generate Post (AI) │  │
-                    │  └────────┬───────────┘  │
-                    │           │               │
-                    │  ┌────────▼───────────┐  │
-                    │  │  Moderate (AI)      │  │
-                    │  │  Safe? On-topic?    │  │
-                    │  └────────┬───────────┘  │
-                    │           │               │
-                    │  ┌────────▼───────────┐  │
-                    │  │  Pick Image (AI)    │  │
-                    │  │  Relevant? Skip?    │  │
-                    │  └────────┬───────────┘  │
-                    │           │               │
-                    │  ┌────────▼───────────┐  │
-                    │  │  Publish to X       │  │
-                    │  └────────────────────┘  │
-                    │                          │
-                    └────────────┬────────────┘
+              ┌──────────────────┼──────────────────┐
+              │                                     │
+  ┌───────────▼───────────┐            ┌────────────▼───────────┐
+  │  For each variant:     │            │  Viral Replies          │
+  │                        │            │  (3% chance per tweet)  │
+  │  Generate Post (AI)    │            │                         │
+  │  Moderate (AI)         │            │  Generate Reply (AI)    │
+  │  Pick Image (AI)       │            │  Moderate (AI)          │
+  │  Publish to X          │            │  Reply to tweet         │
+  │                        │            │                         │
+  └───────────┬───────────┘            └────────────┬───────────┘
+              │                                     │
+              └──────────────────┬──────────────────┘
                                  │
                     ┌────────────▼────────────┐
                     │   Wait (human-like)      │
@@ -87,17 +79,36 @@ Example **hot-take** output:
 Example **deep-insight** output:
 > "El 80% de empresas no ve ganancias en productividad con IA. Pero el problema no es la herramienta, es el proceso. Llevo 2 semanas usando Fireflies para transcribir reuniones y Claude para resumirlas. El combo de ambos ahorra mas que cualquier lista de 50 tools. La clave no es tener mas herramientas, es encadenarlas bien. #IA #Productividad"
 
+### Viral replies
+
+The bot can automatically reply to trending tweets in your niche with deep, insightful comments. This is one of the most effective ways to grow on X — your reply appears under viral tweets where thousands of people are already looking.
+
+```bash
+BOT_REPLY_ENABLED=true       # Enable viral replies
+BOT_REPLY_CHANCE_PERCENT=3   # Reply to ~3% of trending tweets per cycle
+```
+
+Each reply:
+- Adds real value (data, experience, counterpoint) — never generic "great post!" spam
+- Goes through the same AI moderation as regular posts
+- References something specific from the original tweet
+- Is written in your configured language
+- Has randomized delays between replies (30-90 seconds) to avoid looking automated
+
+Example reply to a viral tweet about AI tools:
+> "Interesante punto sobre Fireflies. Lo probe 3 meses y el ROI real esta en combinarlo con Notion AI para que las action items se creen solas. Sin eso, solo tienes transcripciones que nadie lee."
+
 ### AI-powered image selection
 
 The bot doesn't blindly attach the first image it finds. After generating a post, it asks the AI to evaluate all available images from trending tweets and pick the one that best matches the post's topic. If no image is relevant, it publishes without one.
 
 ### Content moderation
 
-Every post goes through an AI moderation step before publishing. The moderator checks:
+Every post and reply goes through an AI moderation step before publishing. The moderator checks:
 - Is the content safe to post?
 - Does it stay on-topic for the configured niche?
 
-Posts that fail moderation are rejected and never published.
+Content that fails moderation is rejected and never published.
 
 ### Auto-shorten
 
@@ -110,6 +121,7 @@ The scheduler avoids robotic patterns:
 - **Peak-hour awareness** — posts more frequently during configured peak hours, less during off-peak
 - **Jitter** — adds +/- 15% random noise to every interval
 - **Configurable delay** between posts in the same cycle
+- **Random delay** between replies (30-90 seconds)
 
 ### Multiple AI providers
 
@@ -133,6 +145,7 @@ Enable `DEBUG=true` to see everything the bot is doing in real-time:
 - AI responses and generation stats (tokens/sec, elapsed time)
 - X API queries and results
 - Image selection decisions
+- Reply targets and generated replies
 - Scheduler calculations (peak hours, jitter, delays)
 - Ollama streaming output (thinking + response tokens)
 
@@ -145,14 +158,14 @@ Enable `LOG_FILE=xbot.log` to write all output (including debug) to a file for l
 ### Prerequisites
 
 - Node.js 22+
-- X Developer account with **Basic** plan ($100/month) for search API
+- X Developer account with **Basic** plan for search API
 - X API credentials with **Read and Write** permissions
 - An AI provider (Ollama local, Groq free, or any OpenAI-compatible API)
 
 ### Setup
 
 ```bash
-git clone https://github.com/your-username/xbot-ai.git
+git clone https://github.com/dvelez3815/xbot-ai.git
 cd xbot-ai
 npm install
 cp .env.example .env
@@ -169,6 +182,23 @@ npm run dev
 # Production
 npm run build
 npm start
+
+# Docker
+docker compose up -d
+```
+
+### Deploy to Kubernetes
+
+```bash
+# Edit secrets
+cp deploy/helm/secret-values.yaml.example deploy/helm/secret-values.yaml
+vim deploy/helm/secret-values.yaml
+
+# Install
+helm install xbot deploy/helm/ -n xbot-ai --create-namespace -f deploy/helm/secret-values.yaml
+
+# Upgrade
+helm upgrade xbot deploy/helm/ -n xbot-ai -f deploy/helm/secret-values.yaml
 ```
 
 ## Configuration reference
@@ -209,6 +239,8 @@ npm start
 | `BOT_MIN_INTERVAL_MINUTES` | `45` | Minimum minutes between cycles |
 | `BOT_MAX_INTERVAL_MINUTES` | `180` | Maximum minutes between cycles |
 | `BOT_PEAK_HOURS` | `9,12,15,18,20` | Hours with higher posting frequency |
+| `BOT_REPLY_ENABLED` | `false` | Enable replying to viral tweets |
+| `BOT_REPLY_CHANCE_PERCENT` | `3` | Chance (0-100) of replying to each trending tweet |
 
 ### System
 
@@ -216,6 +248,36 @@ npm start
 |---|---|---|
 | `DEBUG` | `false` | Enable verbose logging |
 | `LOG_FILE` | (empty) | Write all output to a file |
+
+## Cost estimation (X API)
+
+All costs are for the X API only. AI is free when using Ollama (local) or Groq (cloud free tier).
+
+### Per-cycle breakdown
+
+With `BOT_EXPAND_AUTHORS=false` and 2 variants (`hot-take` + `deep-insight`):
+
+| Operation | Quantity | Unit cost | Cost per cycle |
+|---|---|---|---|
+| Posts: Read (search trends) | ~20 tweets | $0.005 | $0.10 |
+| Content: Create (posts) | 2 | $0.010 | $0.02 |
+| Content: Create (replies) | ~1 | $0.010 | $0.01 |
+| **Total per cycle** | | | **~$0.13** |
+
+### Monthly projections
+
+| Cycles/day | Posts/day | Replies/day | X API cost/month | AI cost |
+|---|---|---|---|---|
+| 2 | 4 | ~2 | ~$8 | Free (Groq/Ollama) |
+| 4 | 8 | ~4 | ~$16 | Free (Groq/Ollama) |
+| 6 | 12 | ~6 | ~$24 | Free (Groq/Ollama) |
+
+### Cost optimization tips
+
+- Set `BOT_EXPAND_AUTHORS=false` to avoid $0.01/user reads (saves ~65%)
+- Use 2 search languages instead of 3 (saves ~33% on reads)
+- Lower `BOT_MAX_RESULTS_PER_SEARCH` from 10 to 5 (saves ~50% on reads)
+- Use Groq or Ollama for AI generation (free)
 
 ## Project structure
 
@@ -227,8 +289,8 @@ src/
   types.ts                  # TypeScript interfaces
   logger.ts                 # Logger with debug mode + file output
   core/
-    engine.ts               # Main orchestrator (cycle loop)
-    content.ts              # AI content generation + moderation
+    engine.ts               # Main orchestrator (cycle loop + replies)
+    content.ts              # AI content generation + moderation + replies
     trends.ts               # Trend search across languages
     variants/
       variant.ts            # PostVariant interface
@@ -245,20 +307,20 @@ src/
   scheduler/
     scheduler.ts            # Human-like scheduling with jitter
   x/
-    client.ts               # X API client (search, publish, media)
+    client.ts               # X API client (search, publish, reply, media)
+deploy/
+  helm/                     # Kubernetes Helm chart
+    Chart.yaml
+    values.yaml             # Public config
+    secret-values.yaml      # Secrets (gitignored)
+    templates/
+      deployment.yaml
+      configmap.yaml
+      secret.yaml
+.github/
+  workflows/
+    docker-publish.yml      # CI/CD: build + push to Docker Hub
 ```
-
-## Cost estimation (X API)
-
-With `BOT_EXPAND_AUTHORS=false` (recommended):
-
-| Posts/day | X API cost/month | AI cost/month |
-|---|---|---|
-| 4 | ~$6 | Free (Ollama/Groq) |
-| 8 | ~$12 | Free (Ollama/Groq) |
-| 12 | ~$18 | Free (Ollama/Groq) |
-
-Main X API costs: `Posts: Read` ($0.005/tweet) + `Content: Create` ($0.01/post).
 
 ## License
 

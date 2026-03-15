@@ -102,8 +102,65 @@ export class Engine {
       }
     }
 
-    log(`--- Cycle done: ${totalPosted} posted, ${totalFailed} failed (${this.postsToday}/${this.config.bot.postsPerDay} today) ---`);
+    // Step 3: Reply to viral tweets (if enabled)
+    let totalReplies = 0;
+    if (this.config.bot.replyEnabled) {
+      totalReplies = await this.processReplies(trending);
+    }
+
+    log(`--- Cycle done: ${totalPosted} posted, ${totalReplies} replies, ${totalFailed} failed (${this.postsToday}/${this.config.bot.postsPerDay} today) ---`);
     return { results, totalPosted, totalFailed };
+  }
+
+  /**
+   * Randomly reply to trending tweets based on configured chance.
+   */
+  private async processReplies(trending: import("../types.js").TrendTweet[]): Promise<number> {
+    const chance = this.config.bot.replyChancePercent / 100;
+    let repliesSent = 0;
+
+    for (const tweet of trending) {
+      if (Math.random() > chance) continue;
+
+      try {
+        log(`--- Reply to viral tweet (${tweet.likeCount} likes) ---`);
+        debug("reply:target", { id: tweet.id, likes: tweet.likeCount, text: tweet.text.slice(0, 100) });
+
+        const replyText = await this.contentEngine.generateReply(tweet);
+        if (!replyText) continue;
+
+        // Moderate the reply
+        const moderation = await this.contentEngine.moderateContent(replyText);
+        if (!moderation.safe) {
+          log(`Reply rejected by moderation: ${moderation.reason}`);
+          continue;
+        }
+
+        log(`Replying: "${replyText.slice(0, 80)}..."`);
+        const result = await this.xClient.replyToTweet(replyText, tweet.id);
+        repliesSent++;
+
+        log(`Replied! Tweet ID: ${result.id}`);
+        debug("reply:posted", { tweetId: result.id, inReplyTo: tweet.id, variant: "reply" });
+
+        // Small delay between replies
+        if (repliesSent > 0) {
+          const delay = Math.floor(30 + Math.random() * 60);
+          log(`Waiting ${delay}s before next reply...`);
+          await sleep(delay * 1000);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        log(`Reply error: ${message}`);
+        debug("reply:error", { tweetId: tweet.id, message });
+      }
+    }
+
+    if (repliesSent > 0) {
+      log(`Sent ${repliesSent} replies to viral tweets`);
+    }
+
+    return repliesSent;
   }
 
   /**

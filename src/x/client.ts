@@ -146,4 +146,19 @@ export class XClient {
 
     return { id: result.data.id };
   }
+
+  /**
+   * Reply to an existing tweet.
+   */
+  async replyToTweet(text: string, inReplyToId: string): Promise<{ id: string }> {
+    debug("x:reply", { textLength: text.length, inReplyToId });
+
+    const result = await this.writeClient.v2.tweet({
+      text,
+      reply: { in_reply_to_tweet_id: inReplyToId },
+    });
+
+    debug("x:reply:done", { tweetId: result.data.id });
+    return { id: result.data.id };
+  }
 }

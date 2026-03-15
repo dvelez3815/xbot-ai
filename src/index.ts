@@ -18,6 +18,7 @@ function printBanner(config: import("./types.js").AppConfig): void {
   log(`Search languages: ${config.bot.searchLanguages.join(", ")}`);
   log(`Variants: ${config.bot.postVariants.join(", ")}`);
   log(`Posts per day: ${config.bot.postsPerDay} (${config.bot.postVariants.length} per cycle)`);
+  log(`Viral replies: ${config.bot.replyEnabled ? `ON (${config.bot.replyChancePercent}% chance)` : "OFF"}`);
   if (process.env[EnvKeys.DEBUG] === "true" || process.env[EnvKeys.DEBUG] === "1") {
     log("DEBUG mode: ON");
   }

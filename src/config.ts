@@ -55,6 +55,8 @@ export function loadConfig(): AppConfig {
       minIntervalMinutes: parseInt(optionalEnv(EnvKeys.BOT_MIN_INTERVAL_MINUTES, "45"), 10),
       maxIntervalMinutes: parseInt(optionalEnv(EnvKeys.BOT_MAX_INTERVAL_MINUTES, "180"), 10),
       peakHours: parseNumberList(optionalEnv(EnvKeys.BOT_PEAK_HOURS, "9,12,15,18,20")),
+      replyEnabled: parseBool(optionalEnv(EnvKeys.BOT_REPLY_ENABLED, "false")),
+      replyChancePercent: parseInt(optionalEnv(EnvKeys.BOT_REPLY_CHANCE_PERCENT, "3"), 10),
     },
   };
 }
