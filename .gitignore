@@ -3,3 +3,4 @@ dist/
 .env
 *.log
 deploy/helm/secret-values.yaml
+deploy/helm/workers/

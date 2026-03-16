@@ -1,6 +1,0 @@
-# Override for AI workflow automation niche
-config:
-  botNiche: "AI workflow automation"
-  botPostsPerDay: "8"
-  botLanguage: "en"
-  botSearchLanguages: "en,ja,de"

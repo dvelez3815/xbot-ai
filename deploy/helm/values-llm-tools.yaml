@@ -1,6 +1,0 @@
-# Override for LLM tools niche
-config:
-  botNiche: "LLM tools"
-  botPostsPerDay: "6"
-  botLanguage: "en"
-  botSearchLanguages: "en,ja,de"

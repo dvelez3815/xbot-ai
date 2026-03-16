@@ -1,7 +1,7 @@
 image:
   repository: dvelez3815/xbot-ai
-  tag: "latest"
-  pullPolicy: Always
+  tag: "0.0.1"
+  pullPolicy: IfNotPresent
 
 replicas: 1
 
@@ -16,7 +16,7 @@ config:
   botSearchLanguages: "en,ja,de,fr"
   botMaxResultsPerSearch: "10"
   botExpandAuthors: "false"
-  botPostMaxLength: "1500"
+  botPostMaxLength: "5000"
   botPostVariants: "deep-insight"
   botDelayBetweenPostsSeconds: "180"
   botPostsPerDay: "8"
