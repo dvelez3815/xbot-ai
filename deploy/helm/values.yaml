@@ -1,6 +1,6 @@
 image:
   repository: dvelez3815/xbot-ai
-  tag: "0.0.1"
+  tag: "0.0.3"
   pullPolicy: IfNotPresent
 
 replicas: 1

@@ -54,7 +54,7 @@ export class ContentEngine {
       const shortened = await this.chat([
         {
           role: "system",
-          content: "You shorten social media posts. Keep the same meaning, tone, and specificity. Reply with ONLY the shortened post.",
+          content: "You shorten social media posts. Keep the same meaning, tone, and specificity. Use PLAIN TEXT only — no markdown formatting like **bold** or *italics*. Reply with ONLY the shortened post.",
         },
         {
           role: "user",
@@ -199,6 +199,7 @@ Analyze this tweet deeply and write a reply in ${targetLang} that:
 - Under ${this.botConfig.postMaxLength} characters
 - No hashtags (replies with hashtags look spammy)
 - Do NOT start with "Great point", "Interesting", "Love this", or "So true" — jump straight into the insight
+- Write in PLAIN TEXT only. No markdown formatting (**bold**, *italics*, # headers) — these symbols appear as literal characters on social media
 
 Reply with ONLY the reply text, nothing else.`,
       },

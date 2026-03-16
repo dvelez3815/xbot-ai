@@ -36,6 +36,11 @@ STRUCTURE (use line breaks):
 - Engaging question that invites discussion
 - 2-3 hashtags max
 
+FORMATTING:
+- Write in PLAIN TEXT only. Do NOT use any markdown formatting: no **bold**, no *italics*, no # headers, no bullet points with - or *
+- Use line breaks and natural sentence structure for emphasis instead of markdown symbols
+- This post will be published on social media where markdown is NOT rendered — any symbols like ** or * will appear as literal characters
+
 WHAT TO AVOID:
 - Vague statements like "X is key" or "practice is important" without explaining HOW
 - Listing tool names without explaining what they do or how to use them
