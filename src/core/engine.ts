@@ -1,6 +1,7 @@
 import type { AppConfig, PostResult, GeneratedPost } from "../types.js";
 import { XClient } from "../x/client.js";
 import { ContentEngine } from "./content.js";
+import { PostHistory } from "./history.js";
 import { findTrendingContent } from "./trends.js";
 import { getVariants, type PostVariant } from "./variants/index.js";
 import { log, debug } from "../logger.js";
@@ -24,6 +25,7 @@ export class Engine {
   private contentEngine: ContentEngine;
   private config: AppConfig;
   private variants: PostVariant[];
+  private history: PostHistory;
   private postsToday = 0;
   private lastPostDate = "";
 
@@ -32,6 +34,7 @@ export class Engine {
     this.xClient = new XClient(config.x);
     this.contentEngine = new ContentEngine(config.ai, config.bot);
     this.variants = getVariants(config.bot.postVariants);
+    this.history = new PostHistory(config.bot.historyFile, config.bot.historyTtlDays);
 
     debug("engine:init", {
       provider: config.ai.provider,
@@ -71,6 +74,14 @@ export class Engine {
       return { results: [{ success: false, error: "no_trends_found", postedAt: new Date() }], totalPosted: 0, totalFailed: 1 };
     }
 
+    const freshTrending = this.history.filterTrending(trending);
+    log(`Trending: ${trending.length} total, ${freshTrending.length} fresh`);
+
+    if (freshTrending.length === 0) {
+      log("All trends already used. Skipping cycle.");
+      return { results: [{ success: false, error: "all_trends_exhausted", postedAt: new Date() }], totalPosted: 0, totalFailed: 1 };
+    }
+
     // Step 2: Generate + publish one post per variant
     const results: PostResult[] = [];
     let totalPosted = 0;
@@ -85,7 +96,7 @@ export class Engine {
       const variant = this.variants[i];
       log(`--- Variant ${i + 1}/${this.variants.length}: [${variant.name}] ---`);
 
-      const result = await this.processVariant(variant, trending);
+      const result = await this.processVariant(variant, freshTrending);
       results.push(result);
 
       if (result.success) {
@@ -171,10 +182,11 @@ export class Engine {
   private async processVariant(variant: PostVariant, trending: import("../types.js").TrendTweet[]): Promise<PostResult> {
     try {
       // Generate (with retry)
-      let post: GeneratedPost | null = await this.contentEngine.generatePost(trending, variant);
+      const usedImageUrls = this.history.getUsedImageUrls();
+      let post: GeneratedPost | null = await this.contentEngine.generatePost(trending, variant, usedImageUrls);
       if (!post) {
         log(`[${variant.name}] Generation failed, retrying...`);
-        post = await this.contentEngine.generatePost(trending, variant);
+        post = await this.contentEngine.generatePost(trending, variant, usedImageUrls);
       }
       if (!post) {
         return { success: false, error: "generation_failed", postedAt: new Date() };
@@ -205,6 +217,10 @@ export class Engine {
 
       this.postsToday++;
       log(`Posted [${variant.name}]! Tweet ID: ${result.id} (${this.postsToday}/${this.config.bot.postsPerDay} today)`);
+
+      const usedTweetIds = trending.slice(0, 5).map(t => t.id);
+      const recordedImageUrls = post.imageUrl ? [post.imageUrl] : [];
+      this.history.record(usedTweetIds, recordedImageUrls);
 
       return { success: true, tweetId: result.id, postedAt: new Date() };
     } catch (err) {

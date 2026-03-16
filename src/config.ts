@@ -57,6 +57,8 @@ export function loadConfig(): AppConfig {
       peakHours: parseNumberList(optionalEnv(EnvKeys.BOT_PEAK_HOURS, "9,12,15,18,20")),
       replyEnabled: parseBool(optionalEnv(EnvKeys.BOT_REPLY_ENABLED, "false")),
       replyChancePercent: parseInt(optionalEnv(EnvKeys.BOT_REPLY_CHANCE_PERCENT, "3"), 10),
+      historyFile: optionalEnv(EnvKeys.BOT_HISTORY_FILE, "./post-history.json"),
+      historyTtlDays: parseInt(optionalEnv(EnvKeys.BOT_HISTORY_TTL_DAYS, "7"), 10),
     },
   };
 }

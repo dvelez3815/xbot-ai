@@ -21,4 +21,6 @@ data:
   BOT_PEAK_HOURS: {{ .Values.config.botPeakHours | quote }}
   BOT_REPLY_ENABLED: {{ .Values.config.botReplyEnabled | quote }}
   BOT_REPLY_CHANCE_PERCENT: {{ .Values.config.botReplyChancePercent | quote }}
+  BOT_HISTORY_FILE: "/data/{{ .Release.Name }}/post-history.json"
+  BOT_HISTORY_TTL_DAYS: {{ .Values.config.botHistoryTtlDays | quote }}
   DEBUG: {{ .Values.config.debug | quote }}

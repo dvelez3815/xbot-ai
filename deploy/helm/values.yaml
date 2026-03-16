@@ -1,6 +1,6 @@
 image:
   repository: dvelez3815/xbot-ai
-  tag: "0.0.3"
+  tag: "0.0.4"
   pullPolicy: IfNotPresent
 
 replicas: 1
@@ -25,6 +25,7 @@ config:
   botPeakHours: "9,12,15,18,20"
   botReplyEnabled: "true"
   botReplyChancePercent: "27"
+  botHistoryTtlDays: "7"
   debug: "false"
 
 # Sensitive values — override in secret-values.yaml
@@ -35,6 +36,11 @@ secrets:
   xAccessToken: ""
   xAccessSecret: ""
   aiApiKey: ""
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
 
 resources:
   requests:

@@ -27,6 +27,10 @@ export interface BotConfig {
   replyEnabled: boolean;
   /** Chance (0-100) of replying to each trending tweet */
   replyChancePercent: number;
+  /** Path to the post history JSON file */
+  historyFile: string;
+  /** Days before history entries expire */
+  historyTtlDays: number;
 }
 
 export interface XCredentials {

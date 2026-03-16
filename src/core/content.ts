@@ -21,7 +21,7 @@ export class ContentEngine {
   /**
    * Generate a post using a specific variant's prompts.
    */
-  async generatePost(trendingTweets: TrendTweet[], variant: PostVariant): Promise<GeneratedPost | null> {
+  async generatePost(trendingTweets: TrendTweet[], variant: PostVariant, usedImageUrls?: Set<string>): Promise<GeneratedPost | null> {
     if (trendingTweets.length === 0) {
       log("No trending tweets to generate from");
       return null;
@@ -73,7 +73,11 @@ export class ContentEngine {
     }
 
     // Ask AI to pick the most relevant image
-    const tweetsWithMedia = inspiration.filter((t) => t.mediaUrls.length > 0);
+    const tweetsWithMedia = inspiration.filter((t) => {
+      if (t.mediaUrls.length === 0) return false;
+      if (usedImageUrls && usedImageUrls.has(t.mediaUrls[0])) return false;
+      return true;
+    });
     let chosenImageUrl: string | undefined;
 
     if (tweetsWithMedia.length > 0) {

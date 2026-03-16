@@ -28,4 +28,15 @@ spec:
                 name: {{ .Release.Name }}-secrets
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: history-data
+              mountPath: /data
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: history-data
+          persistentVolumeClaim:
+            claimName: xbot-shared-history
+      {{- end }}
       restartPolicy: Always
