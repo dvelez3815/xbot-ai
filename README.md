@@ -114,6 +114,44 @@ Content that fails moderation is rejected and never published.
 
 If the AI generates a post slightly over the character limit, xbot-ai automatically asks the AI to shorten it while preserving the core message, specific tool names, and hashtags. Posts that are way over the limit are rejected and regenerated.
 
+### Post history (anti-repetition)
+
+When trends don't change for days, the bot could repeatedly generate posts from the same top tweets, producing similar content with the same images. The history system prevents this by tracking which tweet sources and images have already been used.
+
+**How it works:**
+- After each successful post, the bot records the inspiration tweet IDs and the image URL used
+- On the next cycle, already-used tweets are filtered out before generation
+- Already-used images are excluded from image selection
+- If all trending tweets have been used, the cycle is skipped (`all_trends_exhausted`)
+- History entries expire after a configurable TTL (default: 7 days), allowing topics to recycle naturally
+
+```bash
+BOT_HISTORY_FILE=./post-history.json   # Path to history file (auto-created)
+BOT_HISTORY_TTL_DAYS=7                 # Days before entries expire
+```
+
+**Persistence in Kubernetes:**
+
+All pods share a single `ReadWriteOnce` PersistentVolumeClaim (`xbot-shared-history`, 1Gi) mounted at `/data/`. Each pod writes to its own subdirectory based on its Helm release name:
+
+```
+/data/
+  xbot-ai/post-history.json
+  xbot-llm/post-history.json
+  xbot-cybersec/post-history.json
+  ...
+```
+
+The PVC is created automatically on the first `helm upgrade --install` via a `lookup` guard in the template — subsequent releases reuse it without conflict. Each pod's directory is auto-created on startup via `mkdirSync(recursive: true)`, so new workers need zero manual setup.
+
+```yaml
+# values.yaml
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""  # Uses cluster default (e.g., do-block-storage on DigitalOcean)
+```
+
 ### Human-like scheduling
 
 The scheduler avoids robotic patterns:
@@ -252,6 +290,8 @@ The tool shows top tweets, like counts, and query strategy (AND vs OR) for each 
 | `BOT_PEAK_HOURS` | `9,12,15,18,20` | Hours with higher posting frequency |
 | `BOT_REPLY_ENABLED` | `false` | Enable replying to viral tweets |
 | `BOT_REPLY_CHANCE_PERCENT` | `3` | Chance (0-100) of replying to each trending tweet |
+| `BOT_HISTORY_FILE` | `./post-history.json` | Path to post history file (auto-created) |
+| `BOT_HISTORY_TTL_DAYS` | `7` | Days before history entries expire |
 
 ### System
 
@@ -303,6 +343,7 @@ src/
     engine.ts               # Main orchestrator (cycle loop + replies)
     content.ts              # AI content generation + moderation + replies
     trends.ts               # Trend search across languages
+    history.ts              # Post history tracking (anti-repetition)
     variants/
       variant.ts            # PostVariant interface
       hot-take.ts           # Short, provocative post style
@@ -328,6 +369,7 @@ deploy/
       deployment.yaml
       configmap.yaml
       secret.yaml
+      pvc.yaml              # Shared PersistentVolumeClaim for post history
 .github/
   workflows/
     docker-publish.yml      # CI/CD: build + push to Docker Hub
