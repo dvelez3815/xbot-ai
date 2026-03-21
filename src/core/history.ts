@@ -6,6 +6,7 @@ import { log, debug } from "../logger.js";
 interface HistoryEntry {
   tweetIds: string[];
   imageUrls: string[];
+  postTexts?: string[];
   timestamp: number;
 }
 
@@ -75,5 +76,27 @@ export class PostHistory {
   filterTrending(tweets: TrendTweet[]): TrendTweet[] {
     const used = this.getUsedTweetIds();
     return tweets.filter(t => !used.has(t.id));
+  }
+
+  recordGenerative(postText: string): void {
+    this.data.entries.push({
+      tweetIds: [],
+      imageUrls: [],
+      postTexts: [postText],
+      timestamp: Date.now(),
+    });
+    this.prune();
+    this.save();
+  }
+
+  getRecentPostTexts(limit = 20): string[] {
+    const texts: string[] = [];
+    for (let i = this.data.entries.length - 1; i >= 0 && texts.length < limit; i--) {
+      const entry = this.data.entries[i];
+      if (entry.postTexts) {
+        texts.push(...entry.postTexts);
+      }
+    }
+    return texts.slice(0, limit);
   }
 }

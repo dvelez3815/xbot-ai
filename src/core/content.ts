@@ -99,6 +99,61 @@ export class ContentEngine {
   }
 
   /**
+   * Generate a post autonomously without trending tweets (generative mode).
+   */
+  async generateGenerativePost(variant: PostVariant, recentPosts: string[]): Promise<GeneratedPost | null> {
+    const targetLang = LANGUAGE_NAMES[this.botConfig.language] ?? this.botConfig.language;
+    const maxLength = variant.maxLength;
+
+    log(`Generating [${variant.name}] generative post (${variant.minLength}-${maxLength} chars)...`);
+
+    let dedupeHint = "";
+    if (recentPosts.length > 0) {
+      dedupeHint = `\n\nIMPORTANTE: NO generes nada parecido a estos posts recientes:\n${recentPosts.map((p, i) => `${i + 1}. "${p}"`).join("\n")}`;
+    }
+
+    const tag = `generate:${variant.id}`;
+    const text = await this.chat([
+      { role: "system", content: variant.systemPrompt(this.botConfig.niche, targetLang) },
+      { role: "user", content: variant.userPrompt(this.botConfig.niche, targetLang, maxLength, "") + dedupeHint },
+    ], tag);
+
+    let finalText = text;
+
+    const shortenThreshold = Math.floor(maxLength * 1.4);
+    if (finalText && finalText.length > maxLength && finalText.length <= shortenThreshold) {
+      log(`Post too long (${finalText.length}/${maxLength} chars), asking AI to shorten...`);
+      const shortened = await this.chat([
+        {
+          role: "system",
+          content: "You shorten social media posts. Keep the same meaning, tone, and specificity. Use PLAIN TEXT only — no markdown formatting like **bold** or *italics*. Reply with ONLY the shortened post.",
+        },
+        {
+          role: "user",
+          content: `This post is ${finalText.length} characters but must be under ${maxLength}. Shorten it without losing the core message.\n\nPost: "${finalText}"`,
+        },
+      ], `shorten:${variant.id}`);
+
+      debug("shorten:result", { original: finalText.length, shortened: shortened.length, text: shortened });
+      finalText = shortened;
+    }
+
+    if (!finalText || finalText.length > maxLength || finalText.length < variant.minLength) {
+      log(`Generated text invalid (length: ${finalText?.length ?? 0}, required: ${variant.minLength}-${maxLength}), skipping`);
+      debug("generate:rejected", { variant: variant.id, length: finalText?.length ?? 0, min: variant.minLength, max: maxLength, text: finalText });
+      return null;
+    }
+
+    log(`[${variant.name}] post (${finalText.length} chars): "${finalText.slice(0, 80)}..."`);
+    debug("generate:final", { variant: variant.id, text: finalText });
+
+    return {
+      text: finalText,
+      variantId: variant.id,
+    };
+  }
+
+  /**
    * Ask AI to pick the most relevant image from source tweets, or none.
    */
   private async pickRelevantImage(postText: string, tweetsWithMedia: TrendTweet[]): Promise<string | undefined> {
@@ -148,9 +203,14 @@ Reply with JSON only.`,
 
   /**
    * Check if content is safe and on-topic before posting.
+   * @param context - Optional context hint (e.g., "spicy" for provocative content)
    */
-  async moderateContent(text: string): Promise<{ safe: boolean; reason?: string }> {
+  async moderateContent(text: string, context?: string): Promise<{ safe: boolean; reason?: string }> {
     log("Moderating content...");
+
+    const topicCheck = context === "spicy"
+      ? `This is a provocative engagement-bait post for social media. It is EXPECTED to be edgy and provocative about relationships, moral dilemmas, loyalty, money, and social scenarios. It should be APPROVED unless it contains: hate speech, discrimination, explicit sexual content, promotion of violence or self-harm, content targeting minors, or content that would get the account banned on X/Twitter. Provocative questions about relationships, secrets, and moral dilemmas are ALLOWED.`
+      : `Check if this post is safe to publish and stays on topic for "${this.botConfig.niche}".`;
 
     const raw = await this.chat([
       {
@@ -159,7 +219,7 @@ Reply with JSON only.`,
       },
       {
         role: "user",
-        content: `Check if this post is safe to publish and stays on topic for "${this.botConfig.niche}".
+        content: `${topicCheck}
 
 Post: "${text}"
 

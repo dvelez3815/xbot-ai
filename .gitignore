@@ -4,3 +4,4 @@ dist/
 *.log
 deploy/helm/secret-values.yaml
 deploy/helm/workers/
+secret-values-spicy.yaml

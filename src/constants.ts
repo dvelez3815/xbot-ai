@@ -1,8 +1,18 @@
+// ── Bot Modes ──
+
+export const BotModes = {
+  TRENDS: "trends",
+  GENERATIVE: "generative",
+} as const;
+
+export type BotModeType = (typeof BotModes)[keyof typeof BotModes];
+
 // ── Post Variants ──
 
 export const PostVariants = {
   QUICK_INSIGHT: "quick-insight",
   DEEP_INSIGHT: "deep-insight",
+  SPICY_QUESTION: "spicy-question",
 } as const;
 
 export type PostVariantType = (typeof PostVariants)[keyof typeof PostVariants];
@@ -39,6 +49,7 @@ export const EnvKeys = {
   AI_MODEL: "AI_MODEL",
   AI_TIMEOUT_SECONDS: "AI_TIMEOUT_SECONDS",
   // Bot
+  BOT_MODE: "BOT_MODE",
   BOT_NICHE: "BOT_NICHE",
   BOT_LANGUAGE: "BOT_LANGUAGE",
   BOT_SEARCH_LANGUAGES: "BOT_SEARCH_LANGUAGES",

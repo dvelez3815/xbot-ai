@@ -1,4 +1,5 @@
 import type { AppConfig, PostResult, GeneratedPost } from "../types.js";
+import { BotModes } from "../constants.js";
 import { XClient } from "../x/client.js";
 import { ContentEngine } from "./content.js";
 import { PostHistory } from "./history.js";
@@ -61,6 +62,10 @@ export class Engine {
     if (this.postsToday >= this.config.bot.postsPerDay) {
       log(`Daily limit reached (${this.postsToday}/${this.config.bot.postsPerDay}). Skipping.`);
       return { results: [], totalPosted: 0, totalFailed: 0 };
+    }
+
+    if (this.config.bot.mode === BotModes.GENERATIVE) {
+      return this.generativeCycle();
     }
 
     log(`--- Cycle start (${this.variants.length} variants) ---`);
@@ -174,6 +179,84 @@ export class Engine {
     }
 
     return repliesSent;
+  }
+
+  /**
+   * Run one generative cycle: generate + publish one post per variant (no trends).
+   */
+  private async generativeCycle(): Promise<CycleResult> {
+    log(`--- Generative cycle start (${this.variants.length} variants) ---`);
+
+    const results: PostResult[] = [];
+    let totalPosted = 0;
+    let totalFailed = 0;
+
+    for (let i = 0; i < this.variants.length; i++) {
+      if (this.postsToday >= this.config.bot.postsPerDay) {
+        log(`Daily limit reached mid-cycle. Stopping.`);
+        break;
+      }
+
+      const variant = this.variants[i];
+      log(`--- Variant ${i + 1}/${this.variants.length}: [${variant.name}] ---`);
+
+      const result = await this.processGenerativeVariant(variant);
+      results.push(result);
+
+      if (result.success) {
+        totalPosted++;
+      } else {
+        totalFailed++;
+      }
+
+      if (i < this.variants.length - 1 && result.success) {
+        const delay = this.config.bot.delayBetweenPostsSeconds;
+        log(`Waiting ${delay}s before next variant...`);
+        await sleep(delay * 1000);
+      }
+    }
+
+    log(`--- Generative cycle done: ${totalPosted} posted, ${totalFailed} failed (${this.postsToday}/${this.config.bot.postsPerDay} today) ---`);
+    return { results, totalPosted, totalFailed };
+  }
+
+  /**
+   * Generate, moderate, and publish a single generative post for one variant.
+   */
+  private async processGenerativeVariant(variant: PostVariant): Promise<PostResult> {
+    try {
+      const recentPosts = this.history.getRecentPostTexts();
+
+      let post = await this.contentEngine.generateGenerativePost(variant, recentPosts);
+      if (!post) {
+        log(`[${variant.name}] Generation failed, retrying...`);
+        post = await this.contentEngine.generateGenerativePost(variant, recentPosts);
+      }
+      if (!post) {
+        return { success: false, error: "generation_failed", postedAt: new Date() };
+      }
+
+      const moderation = await this.contentEngine.moderateContent(post.text, "spicy");
+      if (!moderation.safe) {
+        log(`[${variant.name}] Rejected by moderation: ${moderation.reason}`);
+        return { success: false, error: `moderation: ${moderation.reason}`, postedAt: new Date() };
+      }
+
+      log(`Publishing [${variant.name}]: "${post.text.slice(0, 80)}..."`);
+      const result = await this.xClient.publishTweet(post.text);
+
+      this.postsToday++;
+      log(`Posted [${variant.name}]! Tweet ID: ${result.id} (${this.postsToday}/${this.config.bot.postsPerDay} today)`);
+
+      this.history.recordGenerative(post.text);
+
+      return { success: true, tweetId: result.id, postedAt: new Date() };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log(`[${variant.name}] Error: ${message}`);
+      debug("cycle:error", { variant: variant.id, message, stack: err instanceof Error ? err.stack : undefined });
+      return { success: false, error: message, postedAt: new Date() };
+    }
   }
 
   /**

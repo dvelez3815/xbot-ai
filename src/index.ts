@@ -13,6 +13,7 @@ function printBanner(config: import("./types.js").AppConfig): void {
   ║   AI-Powered X/Twitter Automation   ║
   ╚══════════════════════════════════════╝
   `);
+  log(`Mode: ${config.bot.mode}`);
   log(`Niche: "${config.bot.niche}"`);
   log(`Post language: ${config.bot.language}`);
   log(`Search languages: ${config.bot.searchLanguages.join(", ")}`);

@@ -7,6 +7,7 @@ data:
   AI_BASE_URL: {{ .Values.config.aiBaseUrl | quote }}
   AI_MODEL: {{ .Values.config.aiModel | quote }}
   AI_TIMEOUT_SECONDS: {{ .Values.config.aiTimeoutSeconds | quote }}
+  BOT_MODE: {{ .Values.config.botMode | default "trends" | quote }}
   BOT_NICHE: {{ .Values.config.botNiche | quote }}
   BOT_LANGUAGE: {{ .Values.config.botLanguage | quote }}
   BOT_SEARCH_LANGUAGES: {{ .Values.config.botSearchLanguages | quote }}

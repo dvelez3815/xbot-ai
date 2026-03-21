@@ -1,4 +1,6 @@
 export interface BotConfig {
+  /** Bot operating mode: "trends" (search + generate) or "generative" (AI-only content) */
+  mode: import("./constants.js").BotModeType;
   /** The specific niche/topic to focus on (e.g., "artificial intelligence", "crypto", "fitness") */
   niche: string;
   /** Language code for the bot's posts (e.g., "es", "en", "pt") */
@@ -72,7 +74,7 @@ export interface TrendTweet {
 export interface GeneratedPost {
   text: string;
   imageUrl?: string;
-  sourceTweet: TrendTweet;
+  sourceTweet?: TrendTweet;
   variantId: string;
   scheduledAt?: Date;
 }

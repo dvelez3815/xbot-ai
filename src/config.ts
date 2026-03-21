@@ -1,6 +1,6 @@
 import "dotenv/config";
 import type { AppConfig } from "./types.js";
-import { AIProviders, AI_PROVIDER_DEFAULTS, EnvKeys, TWEET_MAX_LENGTH_DEFAULT, type AIProviderType } from "./constants.js";
+import { AIProviders, AI_PROVIDER_DEFAULTS, BotModes, EnvKeys, TWEET_MAX_LENGTH_DEFAULT, type AIProviderType, type BotModeType } from "./constants.js";
 import { DEFAULT_VARIANTS } from "./core/variants/index.js";
 
 function requireEnv(key: string): string {
@@ -43,6 +43,7 @@ export function loadConfig(): AppConfig {
       timeoutSeconds: parseInt(optionalEnv(EnvKeys.AI_TIMEOUT_SECONDS, "300"), 10),
     },
     bot: {
+      mode: optionalEnv(EnvKeys.BOT_MODE, BotModes.TRENDS) as BotModeType,
       niche: optionalEnv(EnvKeys.BOT_NICHE, "technology"),
       language: optionalEnv(EnvKeys.BOT_LANGUAGE, "es"),
       searchLanguages: optionalEnv(EnvKeys.BOT_SEARCH_LANGUAGES, "en,pt").split(",").map((s) => s.trim()),

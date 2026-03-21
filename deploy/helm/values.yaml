@@ -1,6 +1,6 @@
 image:
   repository: dvelez3815/xbot-ai
-  tag: "0.0.4"
+  tag: "0.0.5"
   pullPolicy: IfNotPresent
 
 replicas: 1
@@ -11,6 +11,7 @@ config:
   aiBaseUrl: "https://api.groq.com/openai"
   aiModel: "llama-3.3-70b-versatile"
   aiTimeoutSeconds: "120"
+  botMode: "trends"
   botNiche: "AI tools and productivity"
   botLanguage: "en"
   botSearchLanguages: "en,ja,de,fr"
