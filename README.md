@@ -1,21 +1,25 @@
 # xbot-ai
 
-AI-powered X/Twitter automation bot that finds trends in your niche, generates original posts using AI, replies to viral tweets, and publishes with human-like scheduling.
+AI-powered X/Twitter automation bot with two modes: **trends mode** finds trending content in your niche and generates original posts, **generative mode** creates autonomous content like provocative questions and viral engagement-bait — all with human-like scheduling.
 
 ## What it does
 
 xbot-ai is an autonomous agent that runs in the background and grows your X account by:
 
-1. **Searching trends** in your specific niche across multiple languages
-2. **Generating original posts** using AI (never copies or translates directly)
-3. **Replying to viral tweets** with deep, insightful comments that attract followers
-4. **Moderating content** automatically before publishing (safety + on-topic check)
-5. **Selecting relevant images** from trending tweets using AI-powered image matching
-6. **Publishing posts** with text + images to your X account
-7. **Scheduling** with human-like intervals (randomized delays, peak-hour awareness)
-8. **A/B testing** post formats to discover what drives more engagement
+1. **Two operating modes**: trend-based content or fully autonomous AI-generated content
+2. **Searching trends** in your specific niche across multiple languages (trends mode)
+3. **Generating original posts** using AI (never copies or translates directly)
+4. **Generating provocative questions & challenges** that drive engagement (generative mode)
+5. **Replying to viral tweets** with deep, insightful comments that attract followers
+6. **Moderating content** automatically before publishing (safety + context-aware checks)
+7. **Selecting relevant images** from trending tweets using AI-powered image matching
+8. **Publishing posts** with text + images to your X account
+9. **Scheduling** with human-like intervals (randomized delays, peak-hour awareness)
+10. **A/B testing** post formats to discover what drives more engagement
 
 ## How it works
+
+### Trends mode (`BOT_MODE=trends`)
 
 ```
                     ┌─────────────────────────┐
@@ -43,6 +47,31 @@ xbot-ai is an autonomous agent that runs in the background and grows your X acco
                     └─────────────────────────┘
 ```
 
+### Generative mode (`BOT_MODE=generative`)
+
+```
+                    ┌─────────────────────────┐
+                    │   AI generates content   │
+                    │   (no trends needed)     │
+                    └────────────┬────────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │  For each variant:       │
+                    │                          │
+                    │  Generate Post (AI)      │
+                    │  Deduplicate (history)   │
+                    │  Moderate (AI)           │
+                    │  Publish to X            │
+                    └────────────┬────────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │   Wait (human-like)      │
+                    │   Next cycle...          │
+                    └─────────────────────────┘
+```
+
+In generative mode, the AI creates content autonomously based on the variant's prompts — no trend searching, no image selection, no replies. Recent post history is fed back to the AI to avoid repetition.
+
 ## Key features
 
 ### Niche-focused content
@@ -62,15 +91,17 @@ BOT_SEARCH_LANGUAGES=en,ja,de   # Search trends in English, Japanese, German
 
 Each cycle generates multiple posts with different styles to help you discover what drives more engagement:
 
-| Variant | Style | Length | Best for |
-|---|---|---|---|
-| `quick-insight` | Concrete tip, data point, or tool comparison | 100-280 chars | Quick value, saves, shares |
-| `deep-insight` | Data-driven, analytical, informative | 300-600 chars | Bookmarks, shares, authority |
+| Variant | Style | Length | Mode | Best for |
+|---|---|---|---|---|
+| `quick-insight` | Concrete tip, data point, or tool comparison | 100-280 chars | trends | Quick value, saves, shares |
+| `deep-insight` | Data-driven, analytical, informative | 300-600 chars | trends | Bookmarks, shares, authority |
+| `spicy-question` | Provocative questions, moral dilemmas, challenges | 20-280 chars | generative | Replies, engagement, viral reach |
 
 ```bash
-BOT_POST_VARIANTS=quick-insight,deep-insight   # Both variants per cycle
+BOT_POST_VARIANTS=quick-insight,deep-insight   # Both variants per cycle (trends mode)
 BOT_POST_VARIANTS=quick-insight                # Only short insights
 BOT_POST_VARIANTS=deep-insight                 # Only long-form analysis
+BOT_POST_VARIANTS=spicy-question               # Provocative questions (generative mode)
 ```
 
 Example **quick-insight** output:
@@ -78,6 +109,11 @@ Example **quick-insight** output:
 
 Example **deep-insight** output:
 > "80% of companies report zero productivity gains from AI. But the 20% that do have one thing in common: they didn't just adopt tools, they redesigned workflows around them. I switched from using ChatGPT as a chatbot to using it as a pipeline (research > draft > Claude for review > Zapier to publish). Productivity jumped 3x in a week. The tool isn't the bottleneck — your process is. #AI #Productivity"
+
+Example **spicy-question** output:
+> "Tendrías un romance con la novia de tu mejor amigo/a por venganza?"
+
+> "Por cuánto dinero dejarías de hablarle a tu mejor amigo por un año?"
 
 ### Viral replies
 
@@ -232,8 +268,13 @@ docker compose up -d
 cp deploy/helm/secret-values.yaml.example deploy/helm/secret-values.yaml
 vim deploy/helm/secret-values.yaml
 
-# Install
+# Install (trends mode - default)
 helm upgrade --install xbot deploy/helm/ -n xbot-ai --create-namespace -f deploy/helm/secret-values.yaml
+
+# Install (generative mode - spicy questions with separate X account)
+helm upgrade --install xbot-spicy-latam deploy/helm/ -n xbot-ai \
+  -f deploy/helm/secret-values-spicy.yaml \
+  -f deploy/helm/workers/values-spicy-latam.yaml
 ```
 
 ### Analyze niches before deploying
@@ -276,6 +317,7 @@ The tool shows top tweets, like counts, and query strategy (AND vs OR) for each 
 
 | Variable | Default | Description |
 |---|---|---|
+| `BOT_MODE` | `trends` | Operating mode: `trends` (search + generate) or `generative` (AI-only) |
 | `BOT_NICHE` | `technology` | Your niche/topic focus |
 | `BOT_LANGUAGE` | `en` | Language for generated posts |
 | `BOT_SEARCH_LANGUAGES` | `en,ja,de` | Languages to search trends in |
@@ -346,8 +388,9 @@ src/
     history.ts              # Post history tracking (anti-repetition)
     variants/
       variant.ts            # PostVariant interface
-      hot-take.ts           # Short, provocative post style
+      quick-insight.ts      # Short, actionable insight style
       deep-insight.ts       # Long, data-driven post style
+      spicy-question.ts     # Provocative questions (generative mode)
       index.ts              # Variant registry + factory
   providers/
     provider.ts             # AIProvider interface
