@@ -42,6 +42,7 @@ export class OpenAICompatibleProvider implements AIProvider {
       body: JSON.stringify({
         model: this.model,
         messages,
+        temperature: 1.0,
       }),
       signal: AbortSignal.timeout(this.timeoutMs),
     });
