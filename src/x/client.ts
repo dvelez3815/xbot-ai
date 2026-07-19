@@ -1,13 +1,25 @@
 import { TwitterApi } from "twitter-api-v2";
-import type { XCredentials, TrendTweet } from "../types.js";
+import type { XCredentials, TrendTweet, XquikConfig } from "../types.js";
 import { X_RESERVED_OPERATORS } from "../constants.js";
 import { debug } from "../logger.js";
+
+type XquikCreateTweetResponse = {
+  success?: boolean;
+  tweetId?: string;
+  id?: string;
+  error?: string;
+  message?: string;
+  data?: unknown;
+};
 
 export class XClient {
   private readClient: TwitterApi;
   private writeClient: TwitterApi;
+  private xquik?: XquikConfig;
 
   constructor(credentials: XCredentials) {
+    this.xquik = credentials.xquik;
+
     // Read-only client (app-only, bearer token)
     this.readClient = new TwitterApi(credentials.bearerToken);
 
@@ -19,7 +31,10 @@ export class XClient {
       accessSecret: credentials.accessSecret,
     });
 
-    debug("x:init", "X API clients initialized (read + write)");
+    debug("x:init", {
+      read: "x-api",
+      write: this.xquik ? "xquik-text" : "x-api",
+    });
   }
 
   /**
@@ -128,6 +143,10 @@ export class XClient {
   async publishTweet(text: string, imageBuffer?: Buffer): Promise<{ id: string }> {
     debug("x:publish", { textLength: text.length, hasImage: Boolean(imageBuffer), imageBytes: imageBuffer?.length });
 
+    if (this.xquik && !imageBuffer) {
+      return this.publishTextWithXquik({ text });
+    }
+
     let mediaId: string | undefined;
 
     if (imageBuffer) {
@@ -157,6 +176,10 @@ export class XClient {
   async replyToTweet(text: string, inReplyToId: string): Promise<{ id: string }> {
     debug("x:reply", { textLength: text.length, inReplyToId });
 
+    if (this.xquik) {
+      return this.publishTextWithXquik({ text, replyToTweetId: inReplyToId });
+    }
+
     const result = await this.writeClient.v2.tweet({
       text,
       reply: { in_reply_to_tweet_id: inReplyToId },
@@ -165,4 +188,84 @@ export class XClient {
     debug("x:reply:done", { tweetId: result.data.id });
     return { id: result.data.id };
   }
+
+  private async publishTextWithXquik(params: { text: string; replyToTweetId?: string }): Promise<{ id: string }> {
+    if (!this.xquik) {
+      throw new Error("Xquik is not configured");
+    }
+
+    const baseUrl = this.xquik.baseUrl.replace(/\/+$/, "");
+    const url = new URL("/api/v1/x/tweets", `${baseUrl}/`);
+    const body: Record<string, string> = {
+      account: this.xquik.account,
+      text: params.text,
+    };
+
+    if (params.replyToTweetId) {
+      body.reply_to_tweet_id = params.replyToTweetId;
+    }
+
+    debug("xquik:tweet", {
+      textLength: params.text.length,
+      isReply: Boolean(params.replyToTweetId),
+    });
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": this.xquik.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+    const responseText = await response.text();
+    const payload = parseXquikCreateTweetResponse(responseText);
+
+    if (!response.ok || payload.success === false) {
+      throw new Error(buildXquikErrorMessage(response.status, payload, responseText));
+    }
+
+    const tweetId = readString(payload.tweetId, payload.id, readRecord(payload.data)?.tweetId, readRecord(payload.data)?.id);
+    if (!tweetId) {
+      throw new Error("Xquik create tweet response did not include a tweet id");
+    }
+
+    debug("xquik:tweet:done", { tweetId });
+    return { id: tweetId };
+  }
+}
+
+function parseXquikCreateTweetResponse(text: string): XquikCreateTweetResponse {
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text) as XquikCreateTweetResponse;
+  } catch {
+    throw new Error("Xquik returned a non-JSON create tweet response");
+  }
+}
+
+function buildXquikErrorMessage(status: number, payload: XquikCreateTweetResponse, text: string): string {
+  const detail = readString(payload.error, payload.message, text.slice(0, 180));
+  return `Xquik create tweet failed with ${status}: ${detail}`;
+}
+
+function readRecord(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function readString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
 }
