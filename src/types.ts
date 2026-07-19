@@ -9,7 +9,7 @@ export interface BotConfig {
   searchLanguages: string[];
   /** Max tweets to fetch per language per search */
   maxResultsPerSearch: number;
-  /** Expand author info (costs $0.01/user — disable to save) */
+  /** Expand author info (costs $0.01/user - disable to save) */
   expandAuthors: boolean;
   /** Max characters per post (free: 280, premium: up to 25000) */
   postMaxLength: number;
@@ -41,6 +41,13 @@ export interface XCredentials {
   apiSecret: string;
   accessToken: string;
   accessSecret: string;
+  xquik?: XquikConfig;
+}
+
+export interface XquikConfig {
+  apiKey: string;
+  account: string;
+  baseUrl: string;
 }
 
 import type { AIProviderType } from "./constants.js";

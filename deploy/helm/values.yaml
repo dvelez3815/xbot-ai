@@ -36,6 +36,8 @@ secrets:
   xApiSecret: ""
   xAccessToken: ""
   xAccessSecret: ""
+  xquikApiKey: ""
+  xquikAccount: ""
   aiApiKey: ""
 
 persistence:

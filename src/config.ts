@@ -1,5 +1,5 @@
 import "dotenv/config";
-import type { AppConfig } from "./types.js";
+import type { AppConfig, XquikConfig } from "./types.js";
 import { AIProviders, AI_PROVIDER_DEFAULTS, BotModes, EnvKeys, TWEET_MAX_LENGTH_DEFAULT, type AIProviderType, type BotModeType } from "./constants.js";
 import { DEFAULT_VARIANTS } from "./core/variants/index.js";
 
@@ -23,6 +23,29 @@ function parseNumberList(value: string): number[] {
   return value.split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n));
 }
 
+function loadXquikConfig(): XquikConfig | undefined {
+  const apiKey = process.env["XQUIK_API_KEY"];
+  const account = process.env["XQUIK_ACCOUNT"];
+
+  if (!apiKey && !account) {
+    return undefined;
+  }
+
+  if (!apiKey) {
+    throw new Error("Missing required environment variable: XQUIK_API_KEY");
+  }
+
+  if (!account) {
+    throw new Error("Missing required environment variable: XQUIK_ACCOUNT");
+  }
+
+  return {
+    apiKey,
+    account,
+    baseUrl: optionalEnv("XQUIK_BASE_URL", "https://xquik.com"),
+  };
+}
+
 export function loadConfig(): AppConfig {
   const provider = optionalEnv(EnvKeys.AI_PROVIDER, AIProviders.OLLAMA) as AIProviderType;
   const defaults = AI_PROVIDER_DEFAULTS[provider] ?? AI_PROVIDER_DEFAULTS[AIProviders.OLLAMA];
@@ -34,6 +57,7 @@ export function loadConfig(): AppConfig {
       apiSecret: requireEnv(EnvKeys.X_API_SECRET),
       accessToken: requireEnv(EnvKeys.X_ACCESS_TOKEN),
       accessSecret: requireEnv(EnvKeys.X_ACCESS_SECRET),
+      xquik: loadXquikConfig(),
     },
     ai: {
       provider,

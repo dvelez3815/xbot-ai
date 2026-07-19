@@ -303,6 +303,15 @@ The tool shows top tweets, like counts, and query strategy (AND vs OR) for each 
 | `X_ACCESS_TOKEN` | Yes | User Access Token (for posting) |
 | `X_ACCESS_SECRET` | Yes | User Access Token Secret |
 
+Text posts and replies can optionally use [Xquik](https://xquik.com). Image
+posts and trend searches continue through the X API.
+
+| Variable | Required | Description |
+|---|---|---|
+| `XQUIK_API_KEY` | No | Xquik API key for text posts and replies |
+| `XQUIK_ACCOUNT` | With Xquik | Connected X account username |
+| `XQUIK_BASE_URL` | No | Xquik API origin (defaults to `https://xquik.com`) |
+
 ### AI provider
 
 | Variable | Default | Description |
